@@ -53,10 +53,10 @@ on the host:
 make setup MODE=devcontainer INTERFACE=cli+herdr PROVIDER=github
 ```
 
-The apply step creates ignored runtime directories, validates the workspace,
-and writes the selected preferences to `state/setup/preferences.json`. It does
-not install tools, authenticate accounts, clone repositories, or modify Git
-remotes.
+The apply step creates ignored runtime directories, including `workspaces/`,
+validates the platform, and writes the selected preferences to
+`state/setup/preferences.json`. It does not install tools, authenticate
+accounts, clone repositories, or modify Git remotes.
 
 Inspect the saved selection with:
 
@@ -83,6 +83,9 @@ accidentally.
 Add approved repository entries to `config/repos.json`, run `make validate`,
 and review the complete missing set before authorizing `make repos-clone`.
 Cloning is not part of setup materialization.
+
+Create `workspaces/<work-item>/` on demand when an activity needs a folder for
+local organization. The platform does not prescribe its internal structure.
 
 ## Preference-based enhancements
 

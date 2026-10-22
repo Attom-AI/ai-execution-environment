@@ -58,7 +58,8 @@ host
 └── isolated Linux VM
     └── this repository
         └── root devcontainer
-            └── repos/* (independent Git repositories)
+            ├── repos/* (independent Git repositories)
+            └── workspaces/* (organized work items)
 ```
 
 The VM is the identity and data-isolation boundary. The root devcontainer is a
@@ -98,12 +99,17 @@ changes a checked-out branch.
 - `state/`: materialized, ignored generated local state
 - `scratch/`: materialized, ignored disposable experiments
 - `templates/`: starting points copied into individual repositories
-- `workspaces/`: focused VS Code multi-root workspace definitions
+- `workspaces/`: materialized, ignored folders organizing specific work items
 - `worktrees/`: materialized, ignored temporary Git worktrees
 
 The materialized directories are intentionally absent from the `main` tree.
 Run `make bootstrap` to create them. The devcontainer CLI may also generate
 `.devcontainer/devcontainer-lock.json`; it is local output and is not committed.
+
+Each `workspaces/<work-item>/` directory is intentionally free-form. It can
+organize the notes, references, generated artifacts, or editor configuration
+needed for one activity. A `.code-workspace` file is optional local editor
+state, not the definition of a workspace. See `docs/workspaces.md`.
 
 ## Branch strategy
 

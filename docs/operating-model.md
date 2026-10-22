@@ -12,8 +12,8 @@ not attach out-of-scope folders to the VM or root devcontainer.
 2. Add an entry to `config/repos.json`.
 3. Run `make validate`.
 4. Run `make repos-clone`.
-5. Add a focused workspace definition only when multiple repositories need to
-   be opened together.
+5. Create a local `workspaces/<work-item>/` folder when an activity needs an
+   organizing location.
 6. Keep project tooling and instructions in the project repository.
 
 Removing an inventory entry does not delete its checkout. Repository deletion
@@ -22,9 +22,13 @@ is intentionally a separate, manual operation.
 ## Materialized state
 
 The `main` branch is the portable platform definition. It does not track
-`repos/`, `worktrees/`, `state/`, or `scratch/`, including placeholder files.
-`make bootstrap` creates those directories when a working environment is
-materialized. Their contents remain local and ignored.
+`repos/`, `workspaces/`, `worktrees/`, `state/`, or `scratch/`, including
+placeholder files. `make bootstrap` creates those directories when a working
+environment is materialized. Their contents remain local and ignored.
+
+Work-item folders have no required internal schema. Create them on demand and
+use only the structure needed by the activity. Editor-specific workspace files
+may be generated locally but are never required by the platform.
 
 The devcontainer CLI may generate `.devcontainer/devcontainer-lock.json` while
 building the environment. Treat that lock as local generated output; rebuild

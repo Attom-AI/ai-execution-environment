@@ -36,8 +36,13 @@ service topology. Open that project directly to use its environment.
 
 ### Workspaces
 
-Tracked `.code-workspace` files are focused views over the platform and selected
-projects. They improve navigation but do not provide security isolation.
+Each ignored `workspaces/<work-item>/` directory organizes one activity. Its
+internal structure is deliberately unconstrained and may include notes,
+references, generated artifacts, or local editor configuration. Workspaces are
+organizational boundaries, not security boundaries or source repositories.
+
+Editor-specific files such as `.code-workspace` may be generated inside a work
+item when useful, but they are not part of the portable platform definition.
 
 ## Recovery target
 
@@ -49,7 +54,8 @@ A fresh VM should be recoverable through this sequence:
 4. Run `make bootstrap` (the devcontainer does this automatically on creation).
 5. Authenticate the intended GitHub identity inside the VM.
 6. Run `make repos-clone`.
-7. Open a focused project workspace or repository.
+7. Create a work-item folder under `workspaces/` when an activity needs one.
+8. Open the relevant work-item folder or repository.
 
 Secrets, caches, and generated state are intentionally outside this repository
 and require a separate backup or re-authentication strategy.

@@ -15,11 +15,12 @@ local.
 ## Decision
 
 The `main` branch contains only declarative configuration, automation,
-documentation, templates, and static workspace definitions.
+documentation, and templates.
 
 The following paths are materialized by `make bootstrap` and ignored in full:
 
 - `repos/`
+- `workspaces/`
 - `worktrees/`
 - `state/`
 - `scratch/`
@@ -31,8 +32,8 @@ usable workspace without tracked placeholders.
 ## Consequences
 
 - A clean clone does not contain runtime directories until it is bootstrapped.
-- Repository checkouts and local state cannot accidentally become part of the
-  platform repository.
+- Repository checkouts, work-item folders, and local state cannot accidentally
+  become part of the platform repository.
 - Recreating the environment requires bootstrap, GitHub authentication, and
   repository materialization.
 - The devcontainer lock may differ between materializations as feature
