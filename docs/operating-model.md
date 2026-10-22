@@ -1,10 +1,10 @@
 # Operating model
 
-## Personal boundary
+## Trust boundary
 
-Only personal repositories, credentials, content, and artifacts belong in this
-environment. Do not attach employer or client folders to the VM or the root
-devcontainer.
+Choose one trust domain for each materialized environment. Only repositories,
+credentials, content, and artifacts in that domain belong in the workspace. Do
+not attach out-of-scope folders to the VM or root devcontainer.
 
 ## Repository lifecycle
 
@@ -32,7 +32,8 @@ the container to regenerate it.
 
 ## Credentials
 
-- Authenticate GitHub inside the VM using a personal, narrowly scoped identity.
+- Authenticate GitHub inside the VM using the intended, narrowly scoped
+  identity.
 - Do not commit tokens, SSH keys, credential files, or exported environment
   variables.
 - Avoid host SSH-agent forwarding unless its risks and scope are understood.

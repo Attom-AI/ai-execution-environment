@@ -1,12 +1,11 @@
 {
-  "name": "Eiakoji personal workspace",
+  "name": "AI execution environment",
   "build": {
     "dockerfile": "Dockerfile"
   },
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "workspaceFolder": "/workspaces/ai-execution-environment",
   "remoteUser": "vscode",
   "remoteEnv": {
     "GH_CONFIG_DIR": "${containerWorkspaceFolder}/state/gh"

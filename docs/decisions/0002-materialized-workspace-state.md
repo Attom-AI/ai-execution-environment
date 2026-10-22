@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The platform repository must be portable, while an active personal workspace
+The platform repository must be portable, while an active workspace
 contains repository checkouts, credentials, temporary worktrees, scratch data,
 and tool-generated metadata. Placeholder files made those runtime directories
 part of the repository tree even though their contents were intentionally

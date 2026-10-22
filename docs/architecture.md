@@ -2,22 +2,22 @@
 
 ## Context
 
-This platform separates personal development from employer and client work. It
-also makes the personal environment reproducible without turning independent
-projects into a monorepo.
+This platform isolates one development trust domain from others and makes its
+environment reproducible without turning independent projects into a monorepo.
 
 ## Layers
 
 ### Host
 
 The host owns the VM runtime, SSH client, and encrypted backup destination. It
-should not mount work repositories or credentials into the personal VM.
+should not mount repositories or credentials from other trust domains into the
+workspace VM.
 
-### Personal VM
+### Workspace VM
 
-The VM owns personal source code, personal GitHub authentication, the Docker
-engine, and persistent development state. Repository data should live on the
-VM's disk rather than a host-shared directory.
+The VM owns the selected source repositories, their GitHub authentication, the
+Docker engine, and persistent development state. Repository data should live
+on the VM's disk rather than a host-shared directory.
 
 ### Platform repository
 
@@ -47,7 +47,7 @@ A fresh VM should be recoverable through this sequence:
 2. Clone this repository.
 3. Open it in the root devcontainer.
 4. Run `make bootstrap` (the devcontainer does this automatically on creation).
-5. Authenticate the personal GitHub account inside the VM.
+5. Authenticate the intended GitHub identity inside the VM.
 6. Run `make repos-clone`.
 7. Open a focused project workspace or repository.
 

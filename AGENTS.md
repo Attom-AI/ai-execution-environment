@@ -1,8 +1,8 @@
-# Personal workspace platform
+# AI execution environment
 
 ## Purpose
 
-This repository is the control plane for Eiakoji's personal development
+This repository is a reusable control plane for an isolated development
 environment. It inventories independent repositories, provides a shared
 devcontainer, and documents the VM and workspace operating model. It is not an
 application monorepo.
@@ -12,7 +12,8 @@ application monorepo.
 - Treat every checkout under `repos/` as an independent Git repository.
 - Never add files from `repos/`, `worktrees/`, `state/`, or `scratch/` to this
   repository.
-- Never copy employer or client code, credentials, or data into this workspace.
+- Keep code, credentials, and data outside this workspace when they belong to a
+  different trust domain than the one selected by the workspace operator.
 - Do not clone, fetch, push, publish, deploy, or authenticate unless the user
   requests it or the command is the explicit subject of the task.
 - Do not store credentials in tracked files. Use VM-local credential storage or
@@ -38,7 +39,7 @@ application monorepo.
 - Bulk operations must report the repository they are acting on and fail
   visibly rather than hiding errors.
 
-Project-specific instructions belong in each project's own `AGENTS.md`. Truly
-universal personal-environment rules belong in `~/.codex/AGENTS.md` inside the
-VM because nested repositories have their own repository roots.
+Project-specific instructions belong in each project's own `AGENTS.md`.
+Operator-wide rules belong in `~/.codex/AGENTS.md` inside the VM because nested
+repositories have their own repository roots.
 

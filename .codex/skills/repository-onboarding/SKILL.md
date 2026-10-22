@@ -1,12 +1,12 @@
 ---
 name: repository-onboarding
-description: Add a personal Git repository to this workspace's managed repository manifest, validate its location, optionally clone it when explicitly requested, and report its status. Use when registering, adding, or onboarding a repository to the personal workspace; do not use for arbitrary clones inside a managed project.
+description: Add a Git repository to this workspace's managed repository manifest, validate its location, optionally clone it when explicitly requested, and report its status. Use when registering, adding, or onboarding a repository to the managed workspace; do not use for arbitrary clones inside a managed project.
 ---
 
 # Repository Onboarding
 
-Onboard one personal repository without broadening the requested operation to
-other repositories or Git actions.
+Onboard one repository without broadening the requested operation to other
+repositories or Git actions.
 
 ## Inputs and defaults
 
@@ -17,8 +17,9 @@ list of groups.
   trailing `.git`.
 - Default the managed path to `repos/<name>`.
 - Default `groups` to an empty array.
-- Ask whether the repository is personal when ownership is ambiguous. Do not
-  add employer or client repositories, code, credentials, or data.
+- Confirm that the repository belongs to the workspace's selected trust domain
+  when its scope is ambiguous. Do not add out-of-scope code, credentials, or
+  data.
 
 ## Preflight
 

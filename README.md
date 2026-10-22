@@ -1,15 +1,15 @@
-# Eiakoji personal workspace
+# AI execution environment
 
-This repository is the control plane for a personal development environment.
-It keeps personal GitHub repositories inside an isolated VM, provides a generic
-devcontainer for workspace administration, and offers safe commands for cloning
-and inspecting those repositories.
+This repository is a reusable control plane for an isolated development
+environment. It keeps independent Git repositories inside a dedicated VM,
+provides a generic devcontainer for workspace administration, and offers safe
+commands for cloning and inspecting those repositories.
 
 ## Architecture
 
 ```text
 host
-└── personal Linux VM
+└── isolated Linux VM
     └── this repository
         └── root devcontainer
             └── repos/* (independent Git repositories)
@@ -20,11 +20,11 @@ reproducible toolbox, not a replacement for project-specific devcontainers.
 
 ## Quick start
 
-1. Clone this repository inside the personal VM.
+1. Clone this repository inside the workspace VM.
 2. Connect to the VM with VS Code Remote SSH.
 3. Open this directory and choose **Reopen in Container**.
 4. Let the devcontainer run `make bootstrap` to materialize local directories.
-5. Add personal repositories to `config/repos.json`.
+5. Add repositories for the selected trust domain to `config/repos.json`.
 6. Run `make repos-clone` and then `make repos-status`.
 
 Useful commands:
