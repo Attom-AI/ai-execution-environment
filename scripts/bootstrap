@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+mkdir -p "$ROOT/repos" "$ROOT/worktrees" "$ROOT/state" "$ROOT/scratch"
+"$ROOT/scripts/doctor"
+
+printf '\nWorkspace ready. Add repositories to config/repos.json, then run:\n'
+printf '  make repos-clone\n'
+

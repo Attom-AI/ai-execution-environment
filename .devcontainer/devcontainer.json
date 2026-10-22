@@ -1,0 +1,31 @@
+{
+  "name": "Eiakoji personal workspace",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "workspaceFolder": "/workspaces/ai-execution-environment",
+  "remoteUser": "vscode",
+  "remoteEnv": {
+    "GH_CONFIG_DIR": "${containerWorkspaceFolder}/state/gh"
+  },
+  "postCreateCommand": "make doctor",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "DavidAnson.vscode-markdownlint",
+        "streetsidesoftware.code-spell-checker",
+        "timonwong.shellcheck"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  }
+}
+

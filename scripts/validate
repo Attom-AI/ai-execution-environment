@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib.sh
+source "$ROOT/scripts/lib.sh"
+
+validate_manifest
+
+while IFS= read -r script; do
+  bash -n "$script"
+done < <(find "$ROOT/scripts" -maxdepth 1 -type f -print | sort)
+
+if command -v shellcheck >/dev/null 2>&1; then
+  shell_scripts=()
+  while IFS= read -r script; do
+    shell_scripts+=("$script")
+  done < <(find "$ROOT/scripts" -maxdepth 1 -type f -print | sort)
+  shellcheck "${shell_scripts[@]}"
+else
+  printf 'warning: shellcheck not installed; static shell analysis skipped\n' >&2
+fi
+
+while IFS= read -r json_file; do
+  jq -e . "$json_file" >/dev/null
+done < <(find "$ROOT" \
+  -path "$ROOT/repos" -prune -o \
+  -path "$ROOT/worktrees" -prune -o \
+  -name '*.json' -type f -print)
+
+printf 'workspace scaffold is valid\n'
+

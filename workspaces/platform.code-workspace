@@ -1,0 +1,23 @@
+{
+  "folders": [
+    {
+      "name": "platform",
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "files.watcherExclude": {
+      "**/repos/**": true,
+      "**/worktrees/**": true,
+      "**/state/**": true,
+      "**/scratch/**": true
+    },
+    "search.exclude": {
+      "**/repos/**": true,
+      "**/worktrees/**": true,
+      "**/state/**": true,
+      "**/scratch/**": true
+    }
+  }
+}
+
