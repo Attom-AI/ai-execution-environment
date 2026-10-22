@@ -2,28 +2,31 @@
 
 ## Context
 
-This platform separates personal development from employer and client work. It
-also makes the personal environment reproducible without turning independent
-projects into a monorepo.
+This platform isolates one development trust domain from others and makes its
+environment reproducible without turning independent projects into a monorepo.
 
 ## Layers
 
 ### Host
 
 The host owns the VM runtime, SSH client, and encrypted backup destination. It
-should not mount work repositories or credentials into the personal VM.
+should not mount repositories or credentials from other trust domains into the
+workspace VM.
 
-### Personal VM
+### Workspace VM
 
-The VM owns personal source code, personal GitHub authentication, the Docker
-engine, and persistent development state. Repository data should live on the
-VM's disk rather than a host-shared directory.
+The VM owns the selected source repositories, their GitHub authentication, the
+Docker engine, and persistent development state. Repository data should live
+on the VM's disk rather than a host-shared directory.
 
 ### Platform repository
 
 This repository inventories projects and supplies safe administration commands.
 It does not own the history, dependencies, or release process of repositories
 under `repos/`.
+
+The `main` branch contains only the portable platform definition. Runtime
+directories and tool-generated files are materialized locally and ignored.
 
 ### Devcontainers
 
@@ -48,9 +51,10 @@ A fresh VM should be recoverable through this sequence:
 1. Install SSH access and a Docker engine.
 2. Clone this repository.
 3. Open it in the root devcontainer.
-4. Authenticate the personal GitHub account inside the VM.
-5. Run `make repos-clone`.
-6. Open a repository or use an optional tool integration for a named workspace.
+4. Run `make bootstrap` (the devcontainer does this automatically on creation).
+5. Authenticate the intended GitHub identity inside the VM.
+6. Run `make repos-clone`.
+7. Open a repository or use an optional tool integration for a named workspace.
 
 Secrets, caches, and generated state are intentionally outside this repository
 and require a separate backup or re-authentication strategy.

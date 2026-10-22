@@ -1,4 +1,4 @@
 interface:
   display_name: "Repository Onboarding"
-  short_description: "Register and validate a personal repository"
-  default_prompt: "Use $repository-onboarding to add a personal repository to this workspace."
+  short_description: "Register and validate a managed repository"
+  default_prompt: "Use $repository-onboarding to add a repository to this workspace."

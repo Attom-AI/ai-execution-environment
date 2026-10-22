@@ -1,23 +1,16 @@
 {
-  "name": "Eiakoji personal workspace",
+  "name": "AI execution environment",
   "build": {
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/hugo:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/java:1": {
-      "version": "none"
-    }
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "workspaceFolder": "/workspaces/ai-execution-environment",
   "remoteUser": "vscode",
   "remoteEnv": {
     "GH_CONFIG_DIR": "${containerWorkspaceFolder}/state/gh"
   },
-  "postCreateCommand": "make doctor",
+  "postCreateCommand": "make bootstrap",
   "customizations": {
     "vscode": {
       "extensions": [

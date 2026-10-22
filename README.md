@@ -1,15 +1,46 @@
-# Eiakoji personal workspace
+# AI execution environment
 
-This repository is the control plane for a personal development environment.
-It keeps personal GitHub repositories inside an isolated VM, provides a generic
-devcontainer for workspace administration, and offers safe commands for cloning
-and inspecting those repositories.
+This repository is a reusable control plane for an isolated development
+environment. It keeps independent Git repositories inside a dedicated VM,
+provides a generic devcontainer for workspace administration, and offers safe
+commands for cloning and inspecting those repositories.
+
+## Agent-first setup
+
+The repository is designed to be handed to a coding agent, agent CLI, or chat
+assistant after cloning. The agent should inspect `AGENTS.md`, explain the
+available execution modes, verify prerequisites, and guide the operator one
+step at a time. Authentication, cloning, and other network actions still
+require explicit approval.
+
+A portable starting prompt is:
+
+> Read `AGENTS.md` and `README.md`. Help me set up this workspace. Ask whether I
+> want devcontainer isolation or host-native tools, verify the selected mode,
+> and guide me step by step. Do not authenticate or clone repositories until I
+> approve those actions.
+
+The workflow is agent-independent. Codex, Claude, Gemini, Cursor, an
+orchestration layer, or a chat interface can follow the same repository
+contract when it can read the workspace and run—or clearly propose—commands.
+
+## Execution modes
+
+| Mode | Best fit | Tradeoff |
+| --- | --- | --- |
+| Devcontainer | Separate toolchains, credentials, or work contexts, including multiple Git identities | Requires Docker and a devcontainer-capable client |
+| Host-native | A trusted host with suitable global Git and provider CLI configuration | Shares host tools and credential context |
+| Guidance-only | A chat or agent without local command execution | The operator runs each proposed command |
+
+Tool-specific enhancements should be optional profiles layered on this common
+contract. For example, a CLI-plus-orchestrator preference can add recommended
+commands without making that tool mandatory for every user.
 
 ## Architecture
 
 ```text
 host
-└── personal Linux VM
+└── isolated Linux VM
     └── this repository
         └── root devcontainer
             └── repos/* (independent Git repositories)
@@ -17,16 +48,16 @@ host
 
 The VM is the identity and data-isolation boundary. The root devcontainer is a
 reproducible toolbox, not a replacement for project-specific devcontainers.
-It includes Hugo for blog development and SDKMAN for managing JVM tooling.
 
 ## Quick start
 
-1. Clone this repository inside the personal VM.
+1. Clone this repository inside the workspace VM.
 2. Connect to the VM with VS Code Remote SSH.
 3. Open this directory and choose **Reopen in Container**.
-4. Add personal repositories to `config/repos.json` and recurring repository
-   groupings to `config/workspaces.json`.
-5. Run `make validate`, then `make repos-clone` and `make repos-status` when
+4. Let the devcontainer run `make bootstrap` to materialize local directories.
+5. Add repositories for the selected trust domain to `config/repos.json`.
+6. Add recurring repository groupings to `config/workspaces.json` when useful.
+7. Run `make validate`, then `make repos-clone` and `make repos-status` when
    network operations are intended.
 
 Useful commands:
@@ -49,14 +80,30 @@ changes a checked-out branch.
 - `config/`: tracked declarative configuration
 - `docs/`: architecture, operating model, and decisions
 - `infra/vm/`: VM provisioning documentation and future automation
-- `repos/`: ignored independent repository checkouts
+- `repos/`: materialized, ignored independent repository checkouts
 - `scripts/`: safe workspace administration commands
-- `state/`: ignored generated local state
-- `scratch/`: ignored disposable experiments
+- `state/`: materialized, ignored generated local state
+- `scratch/`: materialized, ignored disposable experiments
 - `templates/`: starting points copied into individual repositories
 - `workspaces/`: optional tool-specific integrations derived from the workspace
   manifest
-- `worktrees/`: ignored temporary Git worktrees
+- `worktrees/`: materialized, ignored temporary Git worktrees
+
+The materialized directories are intentionally absent from the `main` tree.
+Run `make bootstrap` to create them. The devcontainer CLI may also generate
+`.devcontainer/devcontainer-lock.json`; it is local output and is not committed.
+
+## Branch strategy
+
+`main` is the portable, shareable artifact. Setup modes belong on `main` once
+they are documented, optional, and verified; permanent branches per tool or
+mode would cause the common setup contract to drift. Short-lived feature
+branches are used to develop capabilities before merging them.
+
+Personalized manifests and experiments may live on an operator-owned working
+branch, while credentials, cloned repositories, generated preferences, and
+other materialized state remain ignored. Agent-guided setup is being developed
+on `feature/agent-guided-setup` before it is proposed for `main`.
 
 `config/workspaces.json` is the tool-neutral source of truth for named groups of
 managed repositories. A workspace can contain one or more repositories; editor

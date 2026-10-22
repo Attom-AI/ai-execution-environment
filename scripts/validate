@@ -28,6 +28,8 @@ while IFS= read -r json_file; do
 done < <(find "$ROOT" \
   -path "$ROOT/repos" -prune -o \
   -path "$ROOT/worktrees" -prune -o \
+  -path "$ROOT/state" -prune -o \
+  -path "$ROOT/scratch" -prune -o \
   -name '*.json' -type f -print)
 
 printf 'workspace scaffold is valid\n'

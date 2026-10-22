@@ -1,4 +1,4 @@
-# 0002: Use tool-neutral workspace manifests
+# 0004: Use tool-neutral workspace manifests
 
 - Status: accepted
 - Date: 2026-10-21
