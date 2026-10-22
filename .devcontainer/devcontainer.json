@@ -11,7 +11,7 @@
   "remoteEnv": {
     "GH_CONFIG_DIR": "${containerWorkspaceFolder}/state/gh"
   },
-  "postCreateCommand": "make doctor",
+  "postCreateCommand": "make bootstrap",
   "customizations": {
     "vscode": {
       "extensions": [

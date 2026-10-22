@@ -25,6 +25,9 @@ This repository inventories projects and supplies safe administration commands.
 It does not own the history, dependencies, or release process of repositories
 under `repos/`.
 
+The `main` branch contains only the portable platform definition. Runtime
+directories and tool-generated files are materialized locally and ignored.
+
 ### Devcontainers
 
 The root devcontainer contains cross-project administrative tools. A project
@@ -43,9 +46,10 @@ A fresh VM should be recoverable through this sequence:
 1. Install SSH access and a Docker engine.
 2. Clone this repository.
 3. Open it in the root devcontainer.
-4. Authenticate the personal GitHub account inside the VM.
-5. Run `make repos-clone`.
-6. Open a focused project workspace or repository.
+4. Run `make bootstrap` (the devcontainer does this automatically on creation).
+5. Authenticate the personal GitHub account inside the VM.
+6. Run `make repos-clone`.
+7. Open a focused project workspace or repository.
 
 Secrets, caches, and generated state are intentionally outside this repository
 and require a separate backup or re-authentication strategy.

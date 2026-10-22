@@ -23,8 +23,9 @@ reproducible toolbox, not a replacement for project-specific devcontainers.
 1. Clone this repository inside the personal VM.
 2. Connect to the VM with VS Code Remote SSH.
 3. Open this directory and choose **Reopen in Container**.
-4. Add personal repositories to `config/repos.json`.
-5. Run `make repos-clone` and then `make repos-status`.
+4. Let the devcontainer run `make bootstrap` to materialize local directories.
+5. Add personal repositories to `config/repos.json`.
+6. Run `make repos-clone` and then `make repos-status`.
 
 Useful commands:
 
@@ -46,13 +47,17 @@ changes a checked-out branch.
 - `config/`: tracked declarative configuration
 - `docs/`: architecture, operating model, and decisions
 - `infra/vm/`: VM provisioning documentation and future automation
-- `repos/`: ignored independent repository checkouts
+- `repos/`: materialized, ignored independent repository checkouts
 - `scripts/`: safe workspace administration commands
-- `state/`: ignored generated local state
-- `scratch/`: ignored disposable experiments
+- `state/`: materialized, ignored generated local state
+- `scratch/`: materialized, ignored disposable experiments
 - `templates/`: starting points copied into individual repositories
 - `workspaces/`: focused VS Code multi-root workspace definitions
-- `worktrees/`: ignored temporary Git worktrees
+- `worktrees/`: materialized, ignored temporary Git worktrees
+
+The materialized directories are intentionally absent from the `main` tree.
+Run `make bootstrap` to create them. The devcontainer CLI may also generate
+`.devcontainer/devcontainer-lock.json`; it is local output and is not committed.
 
 See `docs/operating-model.md` before adding credentials or host mounts.
 
