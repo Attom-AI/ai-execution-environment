@@ -24,6 +24,21 @@ The workflow is agent-independent. Codex, Claude, Gemini, Cursor, an
 orchestration layer, or a chat interface can follow the same repository
 contract when it can read the workspace and run—or clearly propose—commands.
 
+On `feature/agent-guided-setup`, start with a read-only assessment:
+
+```sh
+make setup-plan MODE=devcontainer INTERFACE=cli+herdr PROVIDER=github
+```
+
+After reviewing the plan, materialize the selected profile without installing
+tools, authenticating, or cloning repositories:
+
+```sh
+make setup MODE=devcontainer INTERFACE=cli+herdr PROVIDER=github
+```
+
+See `SETUP.md` for the agent and operator walkthrough.
+
 ## Execution modes
 
 | Mode | Best fit | Tradeoff |

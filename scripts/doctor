@@ -4,7 +4,7 @@ set -euo pipefail
 
 missing=0
 
-for command_name in bash git gh jq make rg shellcheck; do
+for command_name in bash git jq make rg; do
   if command -v "$command_name" >/dev/null 2>&1; then
     printf 'ok      %s\n' "$command_name"
   else
@@ -13,8 +13,16 @@ for command_name in bash git gh jq make rg shellcheck; do
   fi
 done
 
+for command_name in gh glab shellcheck docker devcontainer; do
+  if command -v "$command_name" >/dev/null 2>&1; then
+    printf 'optional %s (available)\n' "$command_name"
+  else
+    printf 'optional %s (not installed)\n' "$command_name"
+  fi
+done
+
 if [[ "$missing" -ne 0 ]]; then
-  printf '\nOpen this repository in its devcontainer to install the workspace tools.\n' >&2
+  printf '\nInstall the missing core tools or use the devcontainer profile.\n' >&2
   exit 1
 fi
 

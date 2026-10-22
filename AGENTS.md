@@ -31,6 +31,25 @@ application monorepo.
 - Record architectural decisions that materially change the operating model in
   `docs/decisions/`.
 
+## Setup protocol
+
+When asked to set up or onboard this workspace:
+
+1. Read `SETUP.md` and run `make setup-plan` before changing the environment.
+2. Ask the operator to choose `devcontainer`, `host`, or `guidance` mode when
+   the choice is not already explicit. Explain the credential-isolation
+   consequence of the choice.
+3. Ask which Git provider is primary and which agent interface or orchestrator
+   they prefer. Treat these as recommendations, not mandatory dependencies.
+4. Run `make setup` only after the execution mode is confirmed. This may create
+   ignored local directories and preferences, but it must not authenticate,
+   clone, install global tools, or change Git remotes.
+5. Guide authentication and repository registration as separate, explicit
+   steps. Never assume that the currently active account is the intended one.
+6. Tailor optional recommendations to detected tools and saved preferences.
+   Keep the portable setup path functional when optional integrations are
+   absent.
+
 ## Verification
 
 - Shell scripts must pass `bash -n` and ShellCheck.

@@ -22,6 +22,13 @@ else
   printf 'warning: shellcheck not installed; static shell analysis skipped\n' >&2
 fi
 
+for setup_mode in devcontainer host guidance; do
+  SETUP_MODE="$setup_mode" \
+    AGENT_INTERFACE=validation \
+    GIT_PROVIDER=git \
+    "$ROOT/scripts/setup" plan >/dev/null
+done
+
 while IFS= read -r json_file; do
   jq -e . "$json_file" >/dev/null
 done < <(find "$ROOT" \
