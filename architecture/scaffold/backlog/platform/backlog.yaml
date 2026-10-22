@@ -1,0 +1,15 @@
+- id: orchestration-engine
+  status: open
+  summary: Select the engine that executes the tool-neutral workflow stages.
+
+- id: jira-source-adapter
+  status: open
+  summary: Implement normalized Jira intake without changing downstream stages.
+
+- id: pull-request-provider-contract
+  status: open
+  summary: Move pull-request operations behind repository provider adapters.
+
+- id: knowledge-close-hook
+  status: open
+  summary: Decide when closed work items should invoke knowledge curation.
