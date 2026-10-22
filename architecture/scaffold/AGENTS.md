@@ -25,6 +25,8 @@ application monorepo.
 - Canonical repository paths must remain below `repos/`.
 - Work items live directly under `workspaces/<workspace-id>/<work-item-id>/`.
 - Worktrees are flat, disposable, and direct children of `worktrees/`.
+- Each container-pool slot is assigned exclusively to one worktree until its
+  work item is closed. Stopping a runtime preserves the slot and container.
 - Persistent work-item state must survive worktree and runtime disposal.
 - Executable infrastructure belongs under `platform/`.
 - `architecture/` is the portable blueprint and must stay synchronized with the

@@ -29,7 +29,8 @@ jq -e '
   (.resume | type == "object") and
   (.blocked | type == "object") and
   (.closed | type == "object") and
-  (.runtime | type == "object")
+  (.runtime | type == "object") and
+  (.runtime.poolSlot == null)
 ' "$ROOT/platform/state/templates/meta.json" >/dev/null \
   || die "invalid work-item state template"
 

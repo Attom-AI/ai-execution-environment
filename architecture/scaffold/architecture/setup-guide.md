@@ -15,3 +15,8 @@
 The host needs Git, GitHub CLI, jq, envsubst, Docker, the Dev Container CLI,
 ShellCheck, ripgrep, Hugo, and SDKMAN. Credentials stay in tool-owned or
 host-local storage and are mounted into the runtime only when needed.
+
+The runtime pool defaults to three exclusive worktree containers. Override
+`RUNTIME_POOL_SIZE` in the ignored root `.env` when a different capacity is
+required. Containers share the built image and mounted GitHub CLI state, not a
+workspace or writable container filesystem.

@@ -2,7 +2,9 @@
 
 An issue-driven execution platform for independent projects. Canonical clones
 live under `repos/`; persistent work-item state lives under project-specific
-workspace containers; disposable Git worktrees remain flat under `worktrees/`.
+workspace containers; each active Git worktree gets an exclusive container
+from a bounded runtime pool; disposable worktrees remain flat under
+`worktrees/`.
 
 ```text
 repos/blog/                                     canonical clone

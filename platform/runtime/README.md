@@ -1,7 +1,15 @@
 # Runtime
 
-One shared devcontainer definition serves all work items. `start.sh` creates or
-reuses a flat worktree and starts its container. `stop.sh` removes runtime
-resources while preserving branch commits and workspace state. `close.sh`
-permanently closes a merged or abandoned item. `list.sh` reports both durable
-state and live container status.
+One shared devcontainer definition builds every runtime, but containers are not
+shared between worktrees. The pool admits three exclusive worktree/container
+assignments by default; set `RUNTIME_POOL_SIZE` to change the capacity.
+
+`start.sh` creates or reuses a flat worktree, claims a pool slot, and creates or
+resumes that worktree's container. `stop.sh` stops the container while retaining
+the container, worktree, and slot. `close.sh` removes those resources and frees
+the slot after refusing to discard uncommitted changes. `list.sh` reports pool
+slots alongside durable state and live container status.
+
+Containers reuse the common image layers. GitHub credentials are not copied
+between containers or baked into the image: the VM-local `.local/state/gh`
+directory is mounted into every runtime.
