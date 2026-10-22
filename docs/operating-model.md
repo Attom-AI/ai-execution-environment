@@ -12,30 +12,26 @@ not attach out-of-scope folders to the VM or root devcontainer.
 2. Add an entry to `config/repos.json`.
 3. Run `make validate`.
 4. Run `make repos-clone`.
-5. Add or update a named workspace in `config/workspaces.json` when a recurring
-   activity needs a stable repository set.
+5. Create a local `workspaces/<work-item>/` folder when an activity needs an
+   organizing location.
 6. Keep project tooling and instructions in the project repository.
-7. Add a tool-specific integration under `workspaces/` only when useful.
 
 Removing an inventory entry does not delete its checkout. Repository deletion
 is intentionally a separate, manual operation.
 
 ## Workspace lifecycle
 
-Workspace names and repository membership are unique. Every member is a
-repository name registered in `config/repos.json`; a workspace may contain a
-single repository. Run `make validate` after changing either manifest.
-
-The manifest describes logical membership independently of an editor or agent.
-Optional files under `workspaces/` may adapt that membership for a particular
-tool, but they do not replace or override `config/workspaces.json`.
+Work-item folders have no required internal schema. Create them on demand and
+use only the structure needed by the activity. Keep source repositories under
+`repos/`; a workspace may contain notes, references, generated artifacts, or
+local editor configuration without becoming another source repository.
 
 ## Materialized state
 
 The `main` branch is the portable platform definition. It does not track
-`repos/`, `worktrees/`, `state/`, or `scratch/`, including placeholder files.
-`make bootstrap` creates those directories when a working environment is
-materialized. Their contents remain local and ignored.
+`repos/`, `workspaces/`, `worktrees/`, `state/`, or `scratch/`, including
+placeholder files. `make bootstrap` creates those directories when a working
+environment is materialized. Their contents remain local and ignored.
 
 The devcontainer CLI may generate `.devcontainer/devcontainer-lock.json` while
 building the environment. Portable `main` treats that lock as local generated

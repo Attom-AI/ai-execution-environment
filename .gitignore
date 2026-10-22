@@ -1,5 +1,6 @@
 # Materialized workspace directories are created by `make bootstrap`.
 /repos/
+/workspaces/
 /worktrees/
 /state/
 /scratch/

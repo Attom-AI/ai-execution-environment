@@ -36,13 +36,14 @@ service topology. Open that project directly to use its environment.
 
 ### Workspaces
 
-`config/workspaces.json` defines named, tool-neutral sets of managed
-repositories. Workspace membership refers to repository names from
-`config/repos.json`, keeping identity separate from editor configuration.
+Each ignored `workspaces/<work-item>/` directory organizes one activity. Its
+internal structure is deliberately unconstrained and may include notes,
+references to managed repositories, generated artifacts, or local editor
+configuration. Workspaces are organizational boundaries, not security
+boundaries or source repositories.
 
-Files under `workspaces/` are optional tool-specific integrations, such as VS
-Code multi-root workspace files. They may provide focused navigation, but they
-are not the workspace source of truth and do not provide security isolation.
+Editor-specific files such as `.code-workspace` may be generated inside a work
+item when useful, but they are not part of the portable platform definition.
 
 ## Recovery target
 
@@ -54,7 +55,8 @@ A fresh VM should be recoverable through this sequence:
 4. Run `make bootstrap` (the devcontainer does this automatically on creation).
 5. Authenticate the intended GitHub identity inside the VM.
 6. Run `make repos-clone`.
-7. Open a repository or use an optional tool integration for a named workspace.
+7. Create a work-item folder under `workspaces/` when an activity needs one.
+8. Open the relevant work-item folder or repository.
 
 Secrets, caches, and generated state are intentionally outside this repository
 and require a separate backup or re-authentication strategy.

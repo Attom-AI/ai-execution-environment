@@ -10,8 +10,8 @@ application monorepo.
 ## Boundaries
 
 - Treat every checkout under `repos/` as an independent Git repository.
-- Never add files from `repos/`, `worktrees/`, `state/`, or `scratch/` to this
-  repository.
+- Never add files from `repos/`, `workspaces/`, `worktrees/`, `state/`, or
+  `scratch/` to this repository.
 - Keep code, credentials, and data outside this workspace when they belong to a
   different trust domain than the one selected by the workspace operator.
 - Do not clone, fetch, push, publish, deploy, or authenticate unless the user
@@ -24,6 +24,8 @@ application monorepo.
 - `config/repos.json` is the source of truth for managed repository locations.
 - Managed repository paths must be relative, remain below `repos/`, and contain
   no `.` or `..` path segments.
+- Treat `workspaces/<work-item>/` as local organization for a specific activity.
+  Do not impose a tracked schema or assume an editor-specific format.
 - Prefer the commands exposed by `make`; run `make validate` after platform
   changes.
 - Keep the portable `main` root devcontainer generic. A personalized working

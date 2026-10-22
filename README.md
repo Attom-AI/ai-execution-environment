@@ -43,7 +43,8 @@ host
 └── isolated Linux VM
     └── this repository
         └── root devcontainer
-            └── repos/* (independent Git repositories)
+            ├── repos/* (independent Git repositories)
+            └── workspaces/* (organized work items)
 ```
 
 The VM is the identity and data-isolation boundary. The root devcontainer is a
@@ -58,9 +59,10 @@ managed repositories that require them.
 3. Open this directory and choose **Reopen in Container**.
 4. Let the devcontainer run `make bootstrap` to materialize local directories.
 5. Add repositories for the selected trust domain to `config/repos.json`.
-6. Add recurring repository groupings to `config/workspaces.json` when useful.
-7. Run `make validate`, then `make repos-clone` and `make repos-status` when
+6. Run `make validate`, then `make repos-clone` and `make repos-status` when
    network operations are intended.
+7. Create a local `workspaces/<work-item>/` folder when an activity needs an
+   organizing location.
 
 Useful commands:
 
@@ -87,8 +89,7 @@ changes a checked-out branch.
 - `state/`: materialized, ignored generated local state
 - `scratch/`: materialized, ignored disposable experiments
 - `templates/`: starting points copied into individual repositories
-- `workspaces/`: optional tool-specific integrations derived from the workspace
-  manifest
+- `workspaces/`: materialized, ignored folders organizing specific work items
 - `worktrees/`: materialized, ignored temporary Git worktrees
 
 The materialized directories are intentionally absent from the `main` tree.
@@ -109,9 +110,9 @@ other materialized state remain ignored. This `dev` branch is such a
 personalized branch and carries the Hugo and SDKMAN toolchain required by its
 managed repositories.
 
-`config/workspaces.json` is the tool-neutral source of truth for named groups of
-managed repositories. A workspace can contain one or more repositories; editor
-files under `workspaces/` are optional conveniences and are not authoritative.
+Each `workspaces/<work-item>/` directory is intentionally free-form. It may
+organize notes, references to managed repositories, generated artifacts, or
+local editor configuration for one activity. See `docs/workspaces.md`.
 
 See `docs/operating-model.md` before adding credentials or host mounts.
 

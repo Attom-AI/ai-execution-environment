@@ -4,7 +4,6 @@ set -euo pipefail
 
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPOS_MANIFEST="${REPOS_MANIFEST:-$WORKSPACE_ROOT/config/repos.json}"
-WORKSPACES_MANIFEST="${WORKSPACES_MANIFEST:-$WORKSPACE_ROOT/config/workspaces.json}"
 
 die() {
   printf 'error: %s\n' "$*" >&2
@@ -32,28 +31,6 @@ validate_manifest() {
       ((.groups // []) | type == "array")
     )
   ' "$REPOS_MANIFEST" >/dev/null || die "invalid repository manifest: $REPOS_MANIFEST"
-}
-
-validate_workspaces_manifest() {
-  require_command jq
-  [[ -f "$WORKSPACES_MANIFEST" ]] || die "manifest not found: $WORKSPACES_MANIFEST"
-
-  jq -e --slurpfile repositories "$REPOS_MANIFEST" '
-    .version == 1 and
-    (.workspaces | type == "array") and
-    ([.workspaces[].name] | length == (unique | length)) and
-    ([.workspaces[].repositories[]] | length == (unique | length)) and
-    all(.workspaces[];
-      (.name | type == "string" and length > 0 and (test("[\\t\\r\\n]") | not)) and
-      (.repositories | type == "array" and length > 0) and
-      all(.repositories[];
-        type == "string" and
-        (. as $repository_name |
-          any($repositories[0].repos[].name; . == $repository_name))
-      )
-    )
-  ' "$WORKSPACES_MANIFEST" >/dev/null ||
-    die "invalid workspace manifest: $WORKSPACES_MANIFEST"
 }
 
 repo_rows() {
