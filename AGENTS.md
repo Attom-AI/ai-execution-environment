@@ -2,16 +2,15 @@
 
 ## Purpose
 
-This repository is a reusable control plane for an isolated development
-environment. It inventories independent repositories, provides a shared
-devcontainer, and documents the VM and workspace operating model. It is not an
+This repository is an agentic execution platform for issue-driven work across
+independent personal projects. It is a workspace control plane, not an
 application monorepo.
 
 ## Boundaries
 
 - Treat every checkout under `repos/` as an independent Git repository.
-- Never add files from `repos/`, `workspaces/`, `worktrees/`, `state/`, or
-  `scratch/` to this repository.
+- Never add files from `repos/`, `workspaces/`, `worktrees/`, `.local/`, or
+  `.env` to this repository.
 - Keep code, credentials, and data outside this workspace when they belong to a
   different trust domain than the one selected by the workspace operator.
 - Do not clone, fetch, push, publish, deploy, or authenticate unless the user
@@ -21,25 +20,22 @@ application monorepo.
 
 ## Working conventions
 
-- `config/repos.json` is the source of truth for managed repository locations.
-- Managed repository paths must be relative, remain below `repos/`, and contain
-  no `.` or `..` path segments.
-- Treat `workspaces/<work-item>/` as local organization for a specific activity.
-  Do not impose a tracked schema or assume an editor-specific format.
-- Prefer the commands exposed by `make`; run `make validate` after platform
-  changes.
-- Keep the portable `main` root devcontainer generic. A personalized working
-  branch may include explicitly documented shared tool dependencies; otherwise,
-  language and application dependencies belong in individual project
-  repositories.
-- Record architectural decisions that materially change the operating model in
-  `docs/decisions/`.
+- `config/projects.json` maps each project to one canonical checkout, one
+  project-specific workspace, and one issue source.
+- Canonical repository paths must remain below `repos/`.
+- Work items live directly under `workspaces/<workspace-id>/<work-item-id>/`.
+- Worktrees are flat, disposable, and direct children of `worktrees/`.
+- Persistent work-item state must survive worktree and runtime disposal.
+- Executable infrastructure belongs under `platform/`.
+- `architecture/` is the portable blueprint and must stay synchronized with the
+  generic tracked implementation.
+- Run `./platform/validate.sh` after platform changes.
 
 ## Verification
 
 - Shell scripts must pass `bash -n` and ShellCheck.
 - JSON files must parse successfully.
-- Repository-management commands must not rewrite branches or working trees.
+- Repository-management commands must not rewrite canonical checkouts.
 - Bulk operations must report the repository they are acting on and fail
   visibly rather than hiding errors.
 

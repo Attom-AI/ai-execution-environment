@@ -16,5 +16,5 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Validate scaffold
-        run: make validate
+        run: ./platform/validate.sh
 

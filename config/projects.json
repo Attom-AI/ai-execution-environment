@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "blog",
+      "workspace": "eiakoji-me-blog",
+      "repository": {
+        "url": "https://github.com/eiakoji-me/blog",
+        "path": "repos/blog"
+      },
+      "issues": {
+        "provider": "github",
+        "owner": "eiakoji-me",
+        "repository": "blog"
+      }
+    }
+  ]
+}

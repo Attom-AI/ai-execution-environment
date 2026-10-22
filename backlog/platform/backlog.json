@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "provider-adapters",
+      "summary": "Add issue-provider adapters beyond GitHub"
+    },
+    {
+      "id": "runtime-adapters",
+      "summary": "Add runtime launchers beyond the shared devcontainer"
+    }
+  ]
+}

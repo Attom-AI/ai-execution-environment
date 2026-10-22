@@ -1,9 +1,8 @@
-# Materialized workspace directories are created by `make bootstrap`.
+# Materialized instance data is created by `./install.sh`.
 /repos/
 /workspaces/
 /worktrees/
-/state/
-/scratch/
+/.local/
 
 # Local environment and editor state.
 .env
