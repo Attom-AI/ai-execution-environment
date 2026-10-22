@@ -9,6 +9,9 @@ repositories from search and file watching. Add another integration only when
 it provides a useful tool experience. A logical workspace may contain one or
 more repositories and does not require a corresponding `.code-workspace` file.
 
+The personalized `dev` branch includes `eiakoji-me-blog.code-workspace`, which
+opens the managed `repos/blog` checkout for editing.
+
 Do not create an all-repositories workspace by default. A workspace is a
 navigation aid and does not isolate repositories from editors or agents.
 
