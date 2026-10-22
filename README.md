@@ -17,14 +17,17 @@ host
 
 The VM is the identity and data-isolation boundary. The root devcontainer is a
 reproducible toolbox, not a replacement for project-specific devcontainers.
+It includes Hugo for blog development and SDKMAN for managing JVM tooling.
 
 ## Quick start
 
 1. Clone this repository inside the personal VM.
 2. Connect to the VM with VS Code Remote SSH.
 3. Open this directory and choose **Reopen in Container**.
-4. Add personal repositories to `config/repos.json`.
-5. Run `make repos-clone` and then `make repos-status`.
+4. Add personal repositories to `config/repos.json` and recurring repository
+   groupings to `config/workspaces.json`.
+5. Run `make validate`, then `make repos-clone` and `make repos-status` when
+   network operations are intended.
 
 Useful commands:
 
@@ -51,8 +54,13 @@ changes a checked-out branch.
 - `state/`: ignored generated local state
 - `scratch/`: ignored disposable experiments
 - `templates/`: starting points copied into individual repositories
-- `workspaces/`: focused VS Code multi-root workspace definitions
+- `workspaces/`: optional tool-specific integrations derived from the workspace
+  manifest
 - `worktrees/`: ignored temporary Git worktrees
+
+`config/workspaces.json` is the tool-neutral source of truth for named groups of
+managed repositories. A workspace can contain one or more repositories; editor
+files under `workspaces/` are optional conveniences and are not authoritative.
 
 See `docs/operating-model.md` before adding credentials or host mounts.
 

@@ -33,8 +33,13 @@ service topology. Open that project directly to use its environment.
 
 ### Workspaces
 
-Tracked `.code-workspace` files are focused views over the platform and selected
-projects. They improve navigation but do not provide security isolation.
+`config/workspaces.json` defines named, tool-neutral sets of managed
+repositories. Workspace membership refers to repository names from
+`config/repos.json`, keeping identity separate from editor configuration.
+
+Files under `workspaces/` are optional tool-specific integrations, such as VS
+Code multi-root workspace files. They may provide focused navigation, but they
+are not the workspace source of truth and do not provide security isolation.
 
 ## Recovery target
 
@@ -45,7 +50,7 @@ A fresh VM should be recoverable through this sequence:
 3. Open it in the root devcontainer.
 4. Authenticate the personal GitHub account inside the VM.
 5. Run `make repos-clone`.
-6. Open a focused project workspace or repository.
+6. Open a repository or use an optional tool integration for a named workspace.
 
 Secrets, caches, and generated state are intentionally outside this repository
 and require a separate backup or re-authentication strategy.

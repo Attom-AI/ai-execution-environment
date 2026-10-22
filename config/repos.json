@@ -1,5 +1,12 @@
 {
   "version": 1,
-  "repos": []
+  "repos": [
+    {
+      "name": "blog",
+      "url": "https://github.com/eiakoji-me/blog",
+      "path": "repos/blog",
+      "groups": []
+    }
+  ]
 }
 

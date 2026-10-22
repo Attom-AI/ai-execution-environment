@@ -11,12 +11,23 @@ devcontainer.
 1. Add an entry to `config/repos.json`.
 2. Run `make validate`.
 3. Run `make repos-clone`.
-4. Add a focused workspace definition only when multiple repositories need to
-   be opened together.
-5. Keep project tooling and instructions in the project repository.
+4. Add or update a named workspace in `config/workspaces.json` when a recurring
+   activity needs a stable repository set.
+5. Add a tool-specific integration under `workspaces/` only when useful.
+6. Keep project tooling and instructions in the project repository.
 
 Removing an inventory entry does not delete its checkout. Repository deletion
 is intentionally a separate, manual operation.
+
+## Workspace lifecycle
+
+Workspace names and repository membership are unique. Every member is a
+repository name registered in `config/repos.json`; a workspace may contain a
+single repository. Run `make validate` after changing either manifest.
+
+The manifest describes logical membership independently of an editor or agent.
+Optional files under `workspaces/` may adapt that membership for a particular
+tool, but they do not replace or override `config/workspaces.json`.
 
 ## Credentials
 
