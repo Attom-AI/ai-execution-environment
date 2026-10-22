@@ -1,4 +1,4 @@
-# Materialized instance data is created by `./install.sh`.
+# Materialized instance data is created by `platform/install/install.sh`.
 /repos/
 /workspaces/
 /worktrees/

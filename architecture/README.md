@@ -2,7 +2,7 @@
 
 This is the portable documentation layer for the execution environment. It
 defines the contract implemented by `platform/` and the instance layout created
-by `install.sh`.
+by `platform/install/install.sh`.
 
 - `directory-layout.md`: ownership and persistence boundaries
 - `naming-conventions.md`: identifiers and paths
