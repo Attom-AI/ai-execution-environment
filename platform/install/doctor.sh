@@ -4,7 +4,7 @@ set -euo pipefail
 
 missing=0
 
-for command_name in bash git gh hugo jq rg shellcheck; do
+for command_name in bash devcontainer docker envsubst git gh jq rg shellcheck; do
   if command -v "$command_name" >/dev/null 2>&1; then
     printf 'ok      %s\n' "$command_name"
   else
@@ -13,25 +13,28 @@ for command_name in bash git gh hugo jq rg shellcheck; do
   fi
 done
 
-sdkman_dir="${SDKMAN_DIR:-/usr/local/sdkman}"
-if [[ -s "$sdkman_dir/bin/sdkman-init.sh" ]]; then
-  if SDKMAN_DIR="$sdkman_dir" bash -c '
-    # shellcheck source=/dev/null
-    source "$SDKMAN_DIR/bin/sdkman-init.sh"
-    command -v sdk >/dev/null 2>&1
-  '; then
-    printf 'ok      sdkman\n'
-  else
-    printf 'missing sdkman\n' >&2
-    missing=1
-  fi
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+runtime_config="$root/platform/runtime/.devcontainer/devcontainer.json"
+if command -v jq >/dev/null 2>&1 && jq -e '
+  .features
+  | has("ghcr.io/devcontainers/features/hugo:1") and
+    has("ghcr.io/devcontainers/features/java:1")
+' "$runtime_config" >/dev/null; then
+  printf 'configured runtime:hugo\n'
+  printf 'configured runtime:sdkman\n'
 else
-  printf 'missing sdkman\n' >&2
+  printf 'missing runtime Hugo/SDKMAN feature configuration\n' >&2
   missing=1
 fi
 
-if [[ "$missing" -ne 0 ]]; then
-  printf '\nOpen this repository in its devcontainer to install the workspace tools.\n' >&2
-  exit 1
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    printf 'ok      github-auth\n'
+  else
+    printf 'missing github-auth (run: gh auth login)\n' >&2
+  fi
 fi
 
+if [[ "$missing" -ne 0 ]]; then
+  printf '\nInstall the missing tools before running work-item automation.\n' >&2
+fi

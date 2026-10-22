@@ -1,9 +1,18 @@
-# Session state
+# Session State — ${WORK_ITEM}
 
-## Objective
+**Last updated:** ${TIMESTAMP} by workspace-scaffolder
 
-## Current state
+## Status
+Workspace scaffolded. No pipeline stage has run.
 
-## Next action
+## Next step
+Run `issue-refinement`.
 
-## Decisions
+## Open questions
+- None yet.
+
+## Key decisions
+- None yet.
+
+## Files in flight
+- None yet.

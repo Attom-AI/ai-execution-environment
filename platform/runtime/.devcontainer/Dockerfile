@@ -4,9 +4,9 @@ RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install --yes --no-install-recommends \
         fd-find \
+        gettext-base \
         jq \
         ripgrep \
         shellcheck \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && rm -rf /var/lib/apt/lists/*
-

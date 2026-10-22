@@ -10,7 +10,7 @@ require_command git
 validate_projects
 
 count=0
-while IFS=$'\t' read -r name _workspace _url relative_path; do
+while IFS=$'\t' read -r name _workspace _provider _url relative_path; do
   target="$ROOT/$relative_path"
   count=$((count + 1))
 
@@ -38,4 +38,3 @@ done < <(project_rows)
 if [[ "$count" -eq 0 ]]; then
   printf 'no projects configured in %s\n' "$PROJECTS_MANIFEST"
 fi
-

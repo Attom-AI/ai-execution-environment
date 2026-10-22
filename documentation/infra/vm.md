@@ -14,4 +14,3 @@ The selected VM must provide:
 Do not put private keys or tokens in provisioning files. Once a provider is
 selected, update the relevant architecture contract and make the smallest
 repeatable bootstrap needed to install SSH and Docker.
-

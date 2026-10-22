@@ -10,7 +10,7 @@ require_command git
 validate_projects
 
 count=0
-while IFS=$'\t' read -r name _workspace url relative_path; do
+while IFS=$'\t' read -r name _workspace provider url relative_path; do
   target="$ROOT/$relative_path"
   count=$((count + 1))
 
@@ -25,10 +25,9 @@ while IFS=$'\t' read -r name _workspace url relative_path; do
 
   printf 'cloning %s into %s\n' "$name" "$relative_path"
   mkdir -p "$(dirname "$target")"
-  git clone -- "$url" "$target"
+  "$(provider_script "$provider")" clone "$url" "$target"
 done < <(project_rows)
 
 if [[ "$count" -eq 0 ]]; then
   printf 'no projects configured in %s\n' "$PROJECTS_MANIFEST"
 fi
-

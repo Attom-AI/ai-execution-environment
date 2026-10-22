@@ -29,6 +29,12 @@ application monorepo.
 - Executable infrastructure belongs under `platform/`.
 - `architecture/` is the portable blueprint and must stay synchronized with the
   generic tracked implementation.
+- Every workflow stage must use `meta.json`, `session-state.md`, and
+  `history.log` as its durable handoff rather than conversation memory.
+- Runtime branch creation must resolve an explicit upstream start point and
+  must not depend on the canonical checkout's current `HEAD`.
+- Run `./architecture/sync-scaffold.sh` after changing portable structure or
+  behavior.
 - Run `./platform/validate.sh` after platform changes.
 
 ## Verification
@@ -42,4 +48,3 @@ application monorepo.
 Project-specific instructions belong in each project's own `AGENTS.md`.
 Operator-wide rules belong in `~/.codex/AGENTS.md` inside the VM because nested
 repositories have their own repository roots.
-

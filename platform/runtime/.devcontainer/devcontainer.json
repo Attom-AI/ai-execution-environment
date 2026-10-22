@@ -12,9 +12,12 @@
       "version": "none"
     }
   },
+  "mounts": [
+    "source=${localEnv:EXECUTION_ROOT}/.local/state/gh,target=/home/vscode/.config/gh,type=bind"
+  ],
   "remoteUser": "vscode",
   "remoteEnv": {
-    "GH_CONFIG_DIR": "${containerWorkspaceFolder}/.local/state/gh"
+    "GH_CONFIG_DIR": "/home/vscode/.config/gh"
   },
   "customizations": {
     "vscode": {
@@ -32,4 +35,3 @@
     }
   }
 }
-

@@ -10,8 +10,8 @@ repositories or Git actions.
 
 ## Inputs and defaults
 
-Require the repository URL, project id, workspace id, and issue source. Accept
-an optional managed path.
+Require the repository URL, repository provider, project id, workspace id, and
+issue source. Accept an optional managed path.
 
 - Derive a missing project id from the final repository URL component and remove a
   trailing `.git`.
@@ -40,7 +40,8 @@ branches, or rewrite a working tree as part of onboarding.
 
 ## Register the repository
 
-1. Add exactly one project object matching the existing schema to
+1. Add exactly one project object matching the existing schema, including the
+   repository provider, owner, and repository name, to
    `config/projects.json`.
 2. Sort project objects by `id` for stable diffs. Preserve unrelated
    entries and formatting.

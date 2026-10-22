@@ -27,6 +27,9 @@ validate_projects() {
     all(.projects[];
       (.id | type == "string" and test("^[a-z0-9][a-z0-9-]*$")) and
       (.workspace | type == "string" and test("^[a-z0-9][a-z0-9-]*$")) and
+      (.repository.provider | type == "string" and test("^[a-z0-9][a-z0-9-]*$")) and
+      (.repository.owner | type == "string" and length > 0) and
+      (.repository.name | type == "string" and length > 0) and
       (.repository.url | type == "string" and length > 0) and
       (.repository.path | type == "string" and test("^repos/[^/]+(?:/[^/]+)*$")) and
       (.repository.path | split("/") | all(. != "." and . != "..")) and
@@ -38,9 +41,20 @@ validate_projects() {
 }
 
 project_rows() {
-  jq -r '.projects[] | [.id, .workspace, .repository.url, .repository.path] | @tsv' "$PROJECTS_MANIFEST"
+  jq -r '.projects[] | [.id, .workspace, .repository.provider, .repository.url, .repository.path] | @tsv' "$PROJECTS_MANIFEST"
 }
 
 project_by_workspace() {
   jq -e --arg workspace "$1" '.projects[] | select(.workspace == $workspace)' "$PROJECTS_MANIFEST"
+}
+
+project_by_id() {
+  jq -e --arg id "$1" '.projects[] | select(.id == $id)' "$PROJECTS_MANIFEST"
+}
+
+provider_script() {
+  local provider="$1"
+  local script="$WORKSPACE_ROOT/platform/repositories/providers/$provider.sh"
+  [[ -x "$script" ]] || die "unsupported repository provider: $provider"
+  printf '%s\n' "$script"
 }

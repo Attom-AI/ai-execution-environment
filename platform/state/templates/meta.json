@@ -1,12 +1,45 @@
 {
-  "version": 1,
+  "schemaVersion": 1,
   "workspace": "",
   "workItem": "",
   "project": "",
   "source": {},
-  "status": "planned",
+  "lifecycleStage": "scaffolded",
+  "gates": {
+    "definitionOfReadyMet": false,
+    "clarifyingQuestionsResolved": false,
+    "designApproved": false,
+    "implementationComplete": false,
+    "testsPassing": false,
+    "reviewApproved": false,
+    "ciPassing": false,
+    "pullRequestMerged": false
+  },
+  "design": {
+    "branch": "",
+    "pullRequestUrl": null
+  },
+  "loops": {
+    "implementation": { "attempts": 0, "maxAttempts": 3 },
+    "testing": { "attempts": 0, "maxAttempts": 3 },
+    "review": { "attempts": 0, "maxAttempts": 3 }
+  },
+  "cicd": { "checksStatus": null },
+  "review": { "verdict": null },
+  "resume": {
+    "nextAgent": "issue-refinement",
+    "lastUpdatedBy": "workspace-scaffolder",
+    "lastUpdatedAt": ""
+  },
+  "blocked": {
+    "isBlocked": false,
+    "reason": null,
+    "since": null
+  },
+  "closed": { "reason": null, "at": null },
   "runtime": {
+    "status": "stopped",
     "worktree": null,
-    "branch": null
+    "containerId": null
   }
 }
