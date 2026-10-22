@@ -1,0 +1,37 @@
+{
+  "name": "AI execution environment",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/hugo:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "none"
+    }
+  },
+  "mounts": [
+    "source=${localEnv:EXECUTION_ROOT}/.local/state/gh,target=/home/vscode/.config/gh,type=bind"
+  ],
+  "remoteUser": "vscode",
+  "remoteEnv": {
+    "GH_CONFIG_DIR": "/home/vscode/.config/gh"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "DavidAnson.vscode-markdownlint",
+        "streetsidesoftware.code-spell-checker",
+        "timonwong.shellcheck"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  }
+}
