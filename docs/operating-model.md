@@ -38,8 +38,10 @@ The `main` branch is the portable platform definition. It does not track
 materialized. Their contents remain local and ignored.
 
 The devcontainer CLI may generate `.devcontainer/devcontainer-lock.json` while
-building the environment. Treat that lock as local generated output; rebuild
-the container to regenerate it.
+building the environment. Portable `main` treats that lock as local generated
+output. A personalized working branch may track it when that branch carries
+additional Features that need reproducible resolution, as `dev` does for Hugo
+and SDKMAN.
 
 ## Credentials
 

@@ -48,6 +48,8 @@ host
 
 The VM is the identity and data-isolation boundary. The root devcontainer is a
 reproducible toolbox, not a replacement for project-specific devcontainers.
+This personalized `dev` branch additionally installs Hugo and SDKMAN for the
+managed repositories that require them.
 
 ## Quick start
 
@@ -90,8 +92,9 @@ changes a checked-out branch.
 - `worktrees/`: materialized, ignored temporary Git worktrees
 
 The materialized directories are intentionally absent from the `main` tree.
-Run `make bootstrap` to create them. The devcontainer CLI may also generate
-`.devcontainer/devcontainer-lock.json`; it is local output and is not committed.
+Run `make bootstrap` to create them. Portable `main` treats the devcontainer
+lock as generated local output; this personalized `dev` branch tracks it to pin
+its additional Features.
 
 ## Branch strategy
 
@@ -102,8 +105,9 @@ branches are used to develop capabilities before merging them.
 
 Personalized manifests and experiments may live on an operator-owned working
 branch, while credentials, cloned repositories, generated preferences, and
-other materialized state remain ignored. Agent-guided setup is being developed
-on `feature/agent-guided-setup` before it is proposed for `main`.
+other materialized state remain ignored. This `dev` branch is such a
+personalized branch and carries the Hugo and SDKMAN toolchain required by its
+managed repositories.
 
 `config/workspaces.json` is the tool-neutral source of truth for named groups of
 managed repositories. A workspace can contain one or more repositories; editor

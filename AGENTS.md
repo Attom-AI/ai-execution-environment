@@ -26,8 +26,10 @@ application monorepo.
   no `.` or `..` path segments.
 - Prefer the commands exposed by `make`; run `make validate` after platform
   changes.
-- Keep the root devcontainer generic. Language and application dependencies
-  belong in the individual project repositories.
+- Keep the portable `main` root devcontainer generic. A personalized working
+  branch may include explicitly documented shared tool dependencies; otherwise,
+  language and application dependencies belong in individual project
+  repositories.
 - Record architectural decisions that materially change the operating model in
   `docs/decisions/`.
 
