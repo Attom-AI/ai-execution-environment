@@ -25,6 +25,8 @@ application monorepo.
 - Canonical repository paths must remain below `repos/`.
 - Work items live directly under `workspaces/<workspace-id>/<work-item-id>/`.
 - Worktrees are flat, disposable, and direct children of `worktrees/`.
+- Each container-pool slot is assigned exclusively to one worktree until its
+  work item is closed. Stopping a runtime preserves the slot and container.
 - Persistent work-item state must survive worktree and runtime disposal.
 - Executable infrastructure belongs under `platform/`.
 - `architecture/` is the portable blueprint and must stay synchronized with the
@@ -67,5 +69,5 @@ When asked to set up or onboard this workspace:
   visibly rather than hiding errors.
 
 Project-specific instructions belong in each project's own `AGENTS.md`.
-Operator-wide rules belong in `~/.codex/AGENTS.md` inside the VM because nested
+Operator-wide rules belong in `~/.codex/AGENTS.md` (or `~/.gemini/` for Antigravity) inside the VM because nested
 repositories have their own repository roots.

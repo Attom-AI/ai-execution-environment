@@ -21,3 +21,7 @@ is needed.
 Every stage reads the global files before acting and updates all three before
 returning. A stage that cannot safely continue sets the structured blocked
 state with a reason and timestamp.
+
+`runtime.poolSlot` and `runtime.containerId` bind a work item to one exclusive
+container. Both remain populated while the runtime is stopped and are cleared
+only when the work item is closed and its runtime resources are released.
