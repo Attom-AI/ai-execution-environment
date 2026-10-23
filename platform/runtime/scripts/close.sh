@@ -49,6 +49,8 @@ jq \
    | .resume.lastUpdatedAt = $timestamp' \
   "$meta" >"$temporary"
 mv "$temporary" "$meta"
+"$ROOT/platform/context/scripts/compact.sh" "$1" "$2" --level l3 >/dev/null
+"$ROOT/platform/context/scripts/snapshot.sh" "$1" "$2" create --reason "closed-$3" >/dev/null
 record_history "$directory" "closed (reason=$3 pool-slot=${pool_slot:-none} released)"
 
 cat >"$directory/session-state.md" <<EOF

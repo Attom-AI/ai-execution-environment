@@ -24,5 +24,6 @@ elif [[ -n "$container_id" ]] && ! command -v docker >/dev/null 2>&1; then
 fi
 
 update_runtime_state "$meta" stopped "$worktree" "$container_id" "$pool_slot" runtime-stop
+"$ROOT/platform/context/scripts/snapshot.sh" "$1" "$2" create --reason runtime-stop >/dev/null
 record_history "$directory" "runtime stopped (pool-slot=${pool_slot:-none}; resources retained)"
 printf 'stopped %s/%s\n' "$1" "$2"

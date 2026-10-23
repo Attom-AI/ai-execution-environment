@@ -9,6 +9,7 @@ instance.
 - `naming-conventions.md`: stable identifiers and paths
 - `pipeline-and-agents.md`: workflow stages and handoffs
 - `state-model.md`: cold-start and cross-stage memory
+- `context-memory-model.md`: L0/L1/L2/L3 sliding window, WAL, LSM compaction, and session snapshots
 - `runtime-lifecycle.md`: safe repository, worktree, and container behavior
 - `scaffolding-and-intake.md`: issue and repository provider seams
 - `documentation-kb.md`: durable project knowledge
