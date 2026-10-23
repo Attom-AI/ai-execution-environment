@@ -91,6 +91,7 @@ if [[ ! -f "$target/README.md" ]]; then
     <"$ROOT/platform/state/templates/README.md" >"$target/README.md"
 fi
 touch "$target/history.log"
+"$ROOT/platform/context/scripts/init.sh" "$workspace" "$work_item"
 
 default_branch="$("$ROOT/platform/repositories/ensure.sh" "$project_id")"
 if [[ "$start_runtime" -eq 1 ]]; then

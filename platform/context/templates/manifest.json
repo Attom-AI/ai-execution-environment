@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "workspace": "",
+  "workItem": "",
+  "activePartition": "main",
+  "lastSeq": 0,
+  "config": {
+    "l0MaxTurns": 8,
+    "l0MaxTokens": 4000,
+    "memtableMaxEntries": 16,
+    "sstableCompactThreshold": 4
+  },
+  "partitions": {}
+}

@@ -12,4 +12,4 @@
 
 - id: knowledge-close-hook
   status: open
-  summary: Decide when closed work items should invoke knowledge curation.
+  summary: Decide when closed work items should promote L3 context archives into curated project documentation.

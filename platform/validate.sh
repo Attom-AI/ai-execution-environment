@@ -11,6 +11,8 @@ validate_projects
 required_paths=(
   .agents/skills/work-item-execution/SKILL.md
   .codex/skills/work-item-execution/SKILL.md
+  platform/context/scripts/init.sh
+  platform/context/templates/manifest.json
   platform/install/setup.sh
   platform/install/templates/.env.example
   platform/repositories/providers/github.sh
@@ -35,6 +37,15 @@ jq -e '
   (.runtime.poolSlot == null)
 ' "$ROOT/platform/state/templates/meta.json" >/dev/null \
   || die "invalid work-item state template"
+
+jq -e '
+  .schemaVersion == 1 and
+  (.activePartition == "main") and
+  (.lastSeq == 0) and
+  (.config | type == "object") and
+  (.partitions | type == "object")
+' "$ROOT/platform/context/templates/manifest.json" >/dev/null \
+  || die "invalid context manifest template"
 
 if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tracked_materialized="$(git -C "$ROOT" ls-files \

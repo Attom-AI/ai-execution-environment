@@ -27,6 +27,7 @@ done
 directory="$(require_work_item "$workspace" "$work_item")"
 meta="$directory/meta.json"
 [[ "$(jq -r '.lifecycleStage' "$meta")" != closed ]] || die "work item is closed: $workspace/$work_item"
+"$ROOT/platform/context/scripts/init.sh" "$workspace" "$work_item"
 validate_projects
 project_id="$(jq -r '.project' "$meta")"
 project="$(project_by_id "$project_id")" || die "project not found: $project_id"

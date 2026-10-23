@@ -1,6 +1,10 @@
 # State model
 
-There are three memory layers:
+The workspace separates **pipeline stage-handoff state** (`platform/state/`)
+from **session context-management memory** (`platform/context/`, documented in
+`context-memory-model.md`).
+
+For pipeline coordination across stages, there are three memory layers:
 
 1. invocation-local reasoning, which is never persisted;
 2. artifacts passed between adjacent stages under `artifacts/`;
