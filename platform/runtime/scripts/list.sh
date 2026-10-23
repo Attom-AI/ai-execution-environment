@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
-printf '%-24s %-14s %-14s %-32s %s\n' WORKSPACE WORK-ITEM STAGE WORKTREE CONTAINER
+printf '%-24s %-14s %-14s %-5s %-32s %s\n' WORKSPACE WORK-ITEM STAGE SLOT WORKTREE CONTAINER
 found=0
 while IFS= read -r meta; do
   found=1
@@ -18,9 +18,9 @@ while IFS= read -r meta; do
     fi
   fi
   jq -r --arg container "$container_status" \
-    '[.workspace, .workItem, .lifecycleStage, (.runtime.worktree // "-"), $container] | @tsv' "$meta" |
-    while IFS=$'\t' read -r workspace work_item stage worktree status; do
-      printf '%-24s %-14s %-14s %-32s %s\n' "$workspace" "$work_item" "$stage" "$worktree" "$status"
+    '[.workspace, .workItem, .lifecycleStage, (.runtime.poolSlot // "-"), (.runtime.worktree // "-"), $container] | @tsv' "$meta" |
+    while IFS=$'\t' read -r workspace work_item stage slot worktree status; do
+      printf '%-24s %-14s %-14s %-5s %-32s %s\n' "$workspace" "$work_item" "$stage" "$slot" "$worktree" "$status"
     done
 done < <(find "$ROOT/workspaces" -mindepth 3 -maxdepth 3 -name meta.json -type f -print 2>/dev/null | sort)
 

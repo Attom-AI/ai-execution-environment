@@ -51,20 +51,27 @@ target_real="$(cd "$(dirname "$target")" && pwd -P)/$(basename "$target")"
 
 if git -C "$repository" worktree list --porcelain | grep -Fxq "worktree $target_real"; then
   printf 'reusing worktree %s\n' "$worktree" >&2
+  if [[ "$(sed -n 's/^gitdir: //p' "$target/.git")" == /* ]]; then
+    git -C "$repository" worktree repair --relative-paths "$target_real"
+  fi
 elif [[ -e "$target" ]]; then
   die "worktree path exists but is not registered: $worktree"
 elif git -C "$repository" show-ref --verify --quiet "refs/heads/$branch"; then
-  git -C "$repository" worktree add "$target" "$branch"
+  git -C "$repository" worktree add --relative-paths "$target" "$branch"
 else
-  git -C "$repository" worktree add --no-track -b "$branch" "$target" "$start_point"
+  git -C "$repository" worktree add --relative-paths --no-track -b "$branch" "$target" "$start_point"
 fi
 
 container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
-update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" runtime-start
+pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
+update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" "$pool_slot" runtime-start
 
 if [[ "$start_container" -eq 1 ]]; then
   require_command docker
   require_command devcontainer
+  pool_lock="$(acquire_pool_lock)"
+  trap 'rmdir "$pool_lock" 2>/dev/null || true' EXIT
+  pool_slot="$(claim_pool_slot "$meta")"
   if [[ -n "$container_id" ]] && docker inspect "$container_id" >/dev/null 2>&1; then
     container_status="$(docker inspect -f '{{.State.Status}}' "$container_id")"
     if [[ "$container_status" != running ]]; then
@@ -74,7 +81,9 @@ if [[ "$start_container" -eq 1 ]]; then
     export EXECUTION_ROOT="$ROOT"
     up_result="$(devcontainer up \
       --workspace-folder "$target" \
-      --config "$ROOT/platform/runtime/.devcontainer/devcontainer.json")"
+      --mount-git-worktree-common-dir \
+      --config "$ROOT/platform/runtime/.devcontainer/devcontainer.json" \
+      --id-label "ai.execution-environment.runtime=slot-$pool_slot-$worktree_id")"
     container_id="$(jq -r '.containerId // empty' <<<"$up_result")"
     [[ -n "$container_id" ]] || die "devcontainer did not return a container id"
   fi
@@ -83,6 +92,6 @@ else
   runtime_status='worktree-ready'
 fi
 
-update_runtime_state "$meta" "$runtime_status" "$worktree" "$container_id" runtime-start
-record_history "$directory" "runtime started (worktree=$worktree container=${container_id:-none})"
+update_runtime_state "$meta" "$runtime_status" "$worktree" "$container_id" "$pool_slot" runtime-start
+record_history "$directory" "runtime started (worktree=$worktree container=${container_id:-none} pool-slot=${pool_slot:-none})"
 printf 'started %s/%s at %s\n' "$workspace" "$work_item" "$target"

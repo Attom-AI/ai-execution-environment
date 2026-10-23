@@ -9,6 +9,7 @@ source "$ROOT/platform/repositories/lib.sh"
 validate_projects
 
 required_paths=(
+  .agents/skills/work-item-execution/SKILL.md
   .codex/skills/work-item-execution/SKILL.md
   platform/install/setup.sh
   platform/install/templates/.env.example
@@ -30,7 +31,8 @@ jq -e '
   (.resume | type == "object") and
   (.blocked | type == "object") and
   (.closed | type == "object") and
-  (.runtime | type == "object")
+  (.runtime | type == "object") and
+  (.runtime.poolSlot == null)
 ' "$ROOT/platform/state/templates/meta.json" >/dev/null \
   || die "invalid work-item state template"
 
@@ -79,7 +81,7 @@ if [[ -d "$ROOT/architecture/scaffold" ]]; then
   jq -e '.version == 1 and .projects == []' \
     "$ROOT/architecture/scaffold/config/projects.json" >/dev/null \
     || die "portable scaffold must contain an empty project inventory"
-  portable_paths=(.codex .editorconfig .github .gitignore AGENTS.md README.md backlog documentation platform)
+  portable_paths=(.agents .codex .editorconfig .github .gitignore AGENTS.md README.md backlog documentation platform)
   for portable_path in "${portable_paths[@]}"; do
     diff -qr "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
       || die "portable scaffold is stale: $portable_path"

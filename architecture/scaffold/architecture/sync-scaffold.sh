@@ -13,7 +13,7 @@ temporary="$(mktemp -d)"
 trap 'rm -rf "$temporary"' EXIT
 mkdir -p "$temporary/tree/config"
 
-for path in .codex .editorconfig .github .gitignore AGENTS.md README.md architecture backlog documentation platform; do
+for path in .agents .codex .editorconfig .github .gitignore AGENTS.md README.md architecture backlog documentation platform; do
   [[ -e "$ROOT/$path" ]] || continue
   tar -C "$ROOT" --exclude='architecture/scaffold' -cf - "$path" |
     tar -C "$temporary/tree" -xf -

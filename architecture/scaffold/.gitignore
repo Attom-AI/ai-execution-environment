@@ -7,6 +7,7 @@
 # Local environment and editor state.
 .env
 .env.*
+!**/platform/install/templates/.env.example
 .DS_Store
 .idea/
 *.swp

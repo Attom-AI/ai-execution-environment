@@ -6,9 +6,11 @@ workspace-scaffolder -> issue-refinement -> solution-designer
 -> pr-creator -> pr-maintainer -> close
 ```
 
-The tool-neutral definitions are under `platform/workflows/agents/`. The
-coordinator is not a stage: it reads persistent state, reports the current
-position, and advances only when explicitly asked to run headlessly.
+The tool-neutral definitions are under `platform/workflows/agents/`, and
+assistant skills are provided under `.codex/skills/` (for Codex) and
+`.agents/skills/` (for Antigravity / `agy`). The coordinator is not a stage: it
+reads persistent state, reports the current position, and advances only when
+explicitly asked to run headlessly.
 
 Each stage has one bounded responsibility and one durable output. Refinement
 produces scope and acceptance criteria; design produces an executable plan;
