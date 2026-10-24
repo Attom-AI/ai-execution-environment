@@ -54,6 +54,21 @@ worktree="worktrees/${worktree_id%-}"
 target="$ROOT/$worktree"
 target_real="$(cd "$(dirname "$target")" && pwd -P)/$(basename "$target")"
 
+container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
+pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
+
+if [[ "$start_container" -eq 1 ]]; then
+  require_command docker
+  require_command devcontainer
+  pool_lock="$(acquire_pool_lock)"
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+  pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
+elif [[ -n "$requested_slot" ]]; then
+  pool_lock="$(acquire_pool_lock)"
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+  pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
+fi
+
 if git -C "$repository" worktree list --porcelain | grep -Fxq "worktree $target_real"; then
   printf 'reusing worktree %s\n' "$worktree" >&2
   if [[ "$(sed -n 's/^gitdir: //p' "$target/.git")" == /* ]]; then
@@ -67,16 +82,7 @@ else
   git -C "$repository" worktree add --relative-paths --no-track -b "$branch" "$target" "$start_point"
 fi
 
-container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
-pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
-update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" "$pool_slot" runtime-start
-
 if [[ "$start_container" -eq 1 ]]; then
-  require_command docker
-  require_command devcontainer
-  pool_lock="$(acquire_pool_lock)"
-  trap 'release_pool_lock "$pool_lock"' EXIT
-  pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
   if [[ "$recreate_container" -eq 1 && -n "$container_id" ]]; then
     if docker inspect "$container_id" >/dev/null 2>&1; then
       docker rm -f "$container_id" >/dev/null
@@ -100,11 +106,6 @@ if [[ "$start_container" -eq 1 ]]; then
   fi
   runtime_status=running
 else
-  if [[ -n "$requested_slot" ]]; then
-    pool_lock="$(acquire_pool_lock)"
-    trap 'release_pool_lock "$pool_lock"' EXIT
-    pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
-  fi
   runtime_status='worktree-ready'
 fi
 

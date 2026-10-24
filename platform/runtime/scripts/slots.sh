@@ -13,7 +13,7 @@ usage:
   $0 resize <pool-size>
   $0 add [count]
   $0 allocate <workspace-id> <work-item-id> [--slot <slot>] [--no-container] [--start-point <ref>]
-  $0 release (<slot> | <workspace-id> <work-item-id>) [--remove-worktree]
+  $0 release (<slot> | <workspace-id> <work-item-id>) [--remove-worktree] [--force]
   $0 recreate (<slot> | <workspace-id> <work-item-id>) [--start-point <ref>]
   $0 cleanup [--dry-run]
 EOF
@@ -97,6 +97,10 @@ cmd_status() {
             state="missing-container"
             stopped_count=$((stopped_count + 1))
             ;;
+          unavailable)
+            state="docker-unavailable"
+            stopped_count=$((stopped_count + 1))
+            ;;
           *)
             state="stopped"
             stopped_count=$((stopped_count + 1))
@@ -142,7 +146,11 @@ cmd_status() {
 cmd_resize() {
   [[ "$#" -eq 1 ]] || { usage; exit 2; }
   local new_size="$1"
+  pool_lock="$(acquire_pool_lock)"
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
   set_runtime_pool_size "$new_size"
+  release_pool_lock "$pool_lock"
+  pool_lock=""
   printf 'resized runtime pool to %s slots\n' "$new_size"
 }
 
@@ -151,9 +159,13 @@ cmd_add() {
   [[ "$#" -le 1 ]] || { usage; exit 2; }
   [[ "$delta" =~ ^[1-9][0-9]*$ ]] || die "slot increment must be a positive integer: $delta"
   local current new_size
+  pool_lock="$(acquire_pool_lock)"
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
   current="$(runtime_pool_size)"
   new_size=$((current + delta))
   set_runtime_pool_size "$new_size"
+  release_pool_lock "$pool_lock"
+  pool_lock=""
   printf 'added %s slot(s); runtime pool size is now %s\n' "$delta" "$new_size"
 }
 
@@ -191,10 +203,12 @@ cmd_allocate() {
 cmd_release() {
   [[ "$#" -ge 1 ]] || { usage; exit 2; }
   local remove_worktree=0
+  local force=0
   local positional=()
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
       --remove-worktree) remove_worktree=1; shift ;;
+      --force) force=1; shift ;;
       *) positional+=("$1"); shift ;;
     esac
   done
@@ -209,13 +223,25 @@ cmd_release() {
     exit 2
   fi
 
-  local directory workspace work_item worktree container_id pool_slot project_id project repository_path
+  local directory workspace work_item worktree container_id pool_slot runtime_status c_status="none" project_id project repository_path
   directory="$(dirname "$meta")"
   workspace="$(jq -r '.workspace' "$meta")"
   work_item="$(jq -r '.workItem' "$meta")"
   worktree="$(jq -r '.runtime.worktree // empty' "$meta")"
   container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
   pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
+  runtime_status="$(jq -r '.runtime.status // "stopped"' "$meta")"
+
+  if [[ -n "$container_id" ]]; then
+    c_status="$(inspect_container_status "$container_id")"
+    if [[ "$c_status" == unavailable ]]; then
+      die "docker is unavailable; cannot inspect or remove runtime container $container_id"
+    fi
+  fi
+
+  if [[ "$force" -eq 0 && ( "$runtime_status" == running || "$c_status" == running ) ]]; then
+    die "cannot release active runtime for $workspace/$work_item; stop it first or pass --force"
+  fi
 
   local safe_wt=""
   if [[ -n "$worktree" ]]; then
@@ -229,12 +255,8 @@ cmd_release() {
     fi
   fi
 
-  if [[ -n "$container_id" ]]; then
-    if command -v docker >/dev/null 2>&1 && docker inspect "$container_id" >/dev/null 2>&1; then
-      docker rm -f "$container_id" >/dev/null
-    elif ! command -v docker >/dev/null 2>&1; then
-      die "docker is required to remove runtime container $container_id"
-    fi
+  if [[ -n "$container_id" && "$c_status" != missing ]]; then
+    docker rm -f "$container_id" >/dev/null
   fi
 
   local new_worktree="$worktree"
@@ -318,12 +340,19 @@ cmd_cleanup() {
     pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
 
     if [[ "$stage" == closed && ( -n "$container_id" || -n "$pool_slot" ) ]]; then
+      if [[ -n "$container_id" ]]; then
+        c_status="$(inspect_container_status "$container_id")"
+        [[ "$c_status" != unavailable ]] \
+          || die "docker is unavailable; cannot verify or remove container $container_id on closed work item $workspace/$work_item"
+      else
+        c_status="none"
+      fi
       cleaned=$((cleaned + 1))
       if [[ "$dry_run" -eq 1 ]]; then
         printf '[dry-run] would clear stale slot/container on closed work item %s/%s (slot=%s container=%s)\n' \
           "$workspace" "$work_item" "${pool_slot:-none}" "${container_id:-none}"
       else
-        if [[ -n "$container_id" ]] && command -v docker >/dev/null 2>&1 && docker inspect "$container_id" >/dev/null 2>&1; then
+        if [[ -n "$container_id" && "$c_status" != missing ]]; then
           docker rm -f "$container_id" >/dev/null
         fi
         update_runtime_state "$meta" stopped "" "" "" slot-cleanup
@@ -335,6 +364,8 @@ cmd_cleanup() {
 
     if [[ -n "$container_id" ]]; then
       c_status="$(inspect_container_status "$container_id")"
+      [[ "$c_status" != unavailable ]] \
+        || die "docker is unavailable; cannot verify runtime container $container_id for $workspace/$work_item"
       if [[ "$c_status" == missing ]]; then
         cleaned=$((cleaned + 1))
         if [[ "$dry_run" -eq 1 ]]; then
@@ -352,6 +383,12 @@ cmd_cleanup() {
       fi
     fi
   done < <(find "$ROOT/workspaces" -mindepth 3 -maxdepth 3 -name meta.json -type f -print 2>/dev/null | sort)
+
+  local label_containers=""
+  if command -v docker >/dev/null 2>&1; then
+    label_containers="$(docker ps -a --filter "label=ai.execution-environment.runtime" --format '{{.ID}}')" \
+      || die "docker failed while listing runtime containers"
+  fi
 
   local cid
   while IFS= read -r cid; do
@@ -373,7 +410,7 @@ cmd_cleanup() {
         printf 'removed orphaned runtime container %s\n' "$cid"
       fi
     fi
-  done < <(list_label_containers)
+  done <<<"$label_containers"
 
   local lock_dir="$ROOT/.local/state/runtime/pool.lock"
   if is_pool_lock_stale "$lock_dir"; then

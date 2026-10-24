@@ -19,14 +19,24 @@ cat >"$TEST_ROOT/bin/docker" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 state="${DOCKER_STATE_DIR:?}"
+if [[ "${DOCKER_DAEMON_DOWN:-0}" == 1 ]]; then
+  printf 'Cannot connect to the Docker daemon\n' >&2
+  exit 1
+fi
 case "${1:-}" in
   inspect)
     if [[ "${2:-}" == -f ]]; then
       id="${4:-}"
-      [[ -f "$state/$id" ]] || exit 1
+      if [[ ! -f "$state/$id" ]]; then
+        printf 'Error: No such object: %s\n' "$id" >&2
+        exit 1
+      fi
       if [[ -f "$state/$id.running" ]]; then printf 'running\n'; else printf 'exited\n'; fi
     else
-      [[ -f "$state/${2:-}" ]]
+      if [[ ! -f "$state/${2:-}" ]]; then
+        printf 'Error: No such object: %s\n' "${2:-}" >&2
+        exit 1
+      fi
     fi
     ;;
   start)
@@ -341,5 +351,56 @@ kill "$live_pid" 2>/dev/null || true
 wait "$live_pid" 2>/dev/null || true
 "$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
 [[ ! -d "$lock_dir" ]]
+
+# Regression 6: Docker daemon failure aborts slots.sh cleanup without clearing containerId
+feat3_meta="$TEST_ROOT/workspaces/fixture/FEAT-3/meta.json"
+feat3_cid="$(jq -r '.runtime.containerId' "$feat3_meta")"
+if DOCKER_DAEMON_DOWN=1 "$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup 2>/dev/null; then
+  printf 'error: slots.sh cleanup succeeded while Docker daemon was down\n' >&2
+  exit 1
+fi
+[[ "$(jq -r '.runtime.containerId' "$feat3_meta")" == "$feat3_cid" ]]
+
+# Regression 7: slots.sh release rejects active runtimes unless --force is passed
+if "$TEST_ROOT/platform/runtime/scripts/slots.sh" release 3 2>/dev/null; then
+  printf 'error: slots.sh release allowed releasing a running runtime without --force\n' >&2
+  exit 1
+fi
+[[ -f "$DOCKER_STATE_DIR/$feat3_cid.running" ]]
+[[ "$(jq -r '.runtime.poolSlot' "$feat3_meta")" == 3 ]]
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release 3 --force >/dev/null
+[[ "$(jq -r '.runtime.poolSlot // "null"' "$feat3_meta")" == "null" ]]
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" allocate fixture FEAT-3 --slot 3 >/dev/null
+feat3_cid="$(jq -r '.runtime.containerId' "$feat3_meta")"
+
+# Regression 8: Concurrent slots.sh add/resize serializes on pool.lock
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" add 1 >/dev/null &
+pid_a=$!
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" add 1 >/dev/null &
+pid_b=$!
+wait "$pid_a" "$pid_b"
+grep -Fxq 'RUNTIME_POOL_SIZE=6' "$TEST_ROOT/.env"
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" resize 4 >/dev/null
+
+# Regression 9: Locked registered worktree refuses removal instead of falling back to rm -rf
+git -C "$TEST_ROOT/repos/fixture" worktree add -q -b feat/locked-orphan \
+  "$TEST_ROOT/worktrees/locked-orphan" origin/main
+git -C "$TEST_ROOT/repos/fixture" worktree lock "$TEST_ROOT/worktrees/locked-orphan"
+if "$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup 2>/dev/null; then
+  printf 'error: worktrees.sh cleanup bypassed locked git worktree protection\n' >&2
+  exit 1
+fi
+[[ -d "$TEST_ROOT/worktrees/locked-orphan" ]]
+git -C "$TEST_ROOT/repos/fixture" worktree unlock "$TEST_ROOT/worktrees/locked-orphan"
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+[[ ! -e "$TEST_ROOT/worktrees/locked-orphan" ]]
+
+# Regression 10: Failed start.sh precondition preserves existing running runtime status
+jq -e '.runtime.status == "running" and .runtime.poolSlot == 3' "$feat3_meta" >/dev/null
+if "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-3 --slot 4 2>/dev/null; then
+  printf 'error: start.sh allowed claiming already allocated slot 4\n' >&2
+  exit 1
+fi
+jq -e '.runtime.status == "running" and .runtime.poolSlot == 3 and .runtime.containerId != null' "$feat3_meta" >/dev/null
 
 printf 'runtime lifecycle test passed\n'

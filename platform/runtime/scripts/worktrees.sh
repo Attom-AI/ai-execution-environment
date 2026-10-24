@@ -134,6 +134,17 @@ find_repo_for_worktree_dir() {
       fi
     fi
   fi
+
+  local repo_path repo_real
+  while IFS= read -r repo_path; do
+    [[ -n "$repo_path" && -d "$ROOT/$repo_path/.git" ]] || continue
+    if git -C "$ROOT/$repo_path" worktree list --porcelain 2>/dev/null | grep -Fxq "worktree $abs_path"; then
+      repo_real="$(cd "$ROOT/$repo_path" && pwd -P)"
+      printf '%s\n' "$repo_real"
+      return 0
+    fi
+  done < <(jq -r '.projects[].repository.path' "$PROJECTS_MANIFEST" 2>/dev/null || true)
+
   return 1
 }
 
@@ -396,7 +407,9 @@ cmd_cleanup() {
           local repo_dir
           repo_dir="$(find_repo_for_worktree_dir "$abs_path" || true)"
           if [[ -n "$repo_dir" && -d "$repo_dir/.git" ]]; then
-            git -C "$repo_dir" worktree remove "$abs_path" 2>/dev/null || rm -rf "$abs_path"
+            git -C "$repo_dir" worktree remove "$abs_path"
+          elif [[ -f "$abs_path/.git" ]]; then
+            die "cannot resolve canonical repository for registered worktree: $wt_rel"
           else
             rm -rf "$abs_path"
           fi

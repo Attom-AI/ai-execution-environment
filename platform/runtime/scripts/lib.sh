@@ -207,10 +207,23 @@ inspect_container_status() {
     printf 'none\n'
     return 0
   fi
-  if command -v docker >/dev/null 2>&1 && docker inspect "$container_id" >/dev/null 2>&1; then
-    docker inspect -f '{{.State.Status}}' "$container_id"
-  else
+  if ! command -v docker >/dev/null 2>&1; then
+    printf 'unavailable\n'
+    return 0
+  fi
+  local out err_file err
+  err_file="$(mktemp)"
+  if out="$(docker inspect -f '{{.State.Status}}' "$container_id" 2>"$err_file")"; then
+    rm -f "$err_file"
+    printf '%s\n' "$out"
+    return 0
+  fi
+  err="$(<"$err_file")"
+  rm -f "$err_file"
+  if grep -Eqi 'no such (object|container)' <<<"$err"; then
     printf 'missing\n'
+  else
+    printf 'unavailable\n'
   fi
 }
 
