@@ -41,6 +41,12 @@ case "${1:-}" in
     id="${@: -1}"
     rm -f "$state/$id" "$state/$id.running"
     ;;
+  ps)
+    for f in "$state"/container-*; do
+      [[ -f "$f" && "$f" != *.running ]] || continue
+      basename "$f"
+    done
+    ;;
   *) exit 2 ;;
 esac
 EOF
@@ -183,5 +189,94 @@ jq -e '
   .runtime.containerId == null and
   .runtime.poolSlot == null
 ' "$TEST_ROOT/workspaces/fixture/FEAT-1/meta.json" >/dev/null
+
+# Slot management tests (slots.sh)
+slots_out="$("$TEST_ROOT/platform/runtime/scripts/slots.sh" status)"
+grep -Fq 'Pool capacity: 3 slots (3 running, 0 stopped, 0 reserved, 0 free)' <<<"$slots_out"
+
+"$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-2
+slots_out="$("$TEST_ROOT/platform/runtime/scripts/slots.sh" status)"
+grep -Fq 'Pool capacity: 3 slots (2 running, 1 stopped, 0 reserved, 0 free)' <<<"$slots_out"
+
+feat2_container="$(jq -r '.runtime.containerId' "$TEST_ROOT/workspaces/fixture/FEAT-2/meta.json")"
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release 2
+[[ ! -e "$DOCKER_STATE_DIR/$feat2_container" ]]
+[[ -d "$TEST_ROOT/worktrees/fixture-feat-2" ]]
+jq -e '
+  .lifecycleStage != "closed" and
+  .runtime.status == "worktree-ready" and
+  .runtime.worktree == "worktrees/fixture-feat-2" and
+  .runtime.containerId == null and
+  .runtime.poolSlot == null
+' "$TEST_ROOT/workspaces/fixture/FEAT-2/meta.json" >/dev/null
+
+feat3_old_container="$(jq -r '.runtime.containerId' "$TEST_ROOT/workspaces/fixture/FEAT-3/meta.json")"
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" recreate 3
+feat3_new_container="$(jq -r '.runtime.containerId' "$TEST_ROOT/workspaces/fixture/FEAT-3/meta.json")"
+[[ "$feat3_new_container" != "$feat3_old_container" ]]
+[[ ! -e "$DOCKER_STATE_DIR/$feat3_old_container" ]]
+[[ -f "$DOCKER_STATE_DIR/$feat3_new_container.running" ]]
+[[ "$(jq -r '.runtime.poolSlot' "$TEST_ROOT/workspaces/fixture/FEAT-3/meta.json")" == 3 ]]
+
+unset RUNTIME_POOL_SIZE
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" resize 3
+if "$TEST_ROOT/platform/runtime/scripts/slots.sh" resize 2 2>/dev/null; then
+  printf 'error: resize shrank pool below allocated slot 3\n' >&2
+  exit 1
+fi
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" add 1
+grep -Fxq 'RUNTIME_POOL_SIZE=4' "$TEST_ROOT/.env"
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" allocate fixture FEAT-2 --slot 4
+[[ "$(jq -r '.runtime.poolSlot' "$TEST_ROOT/workspaces/fixture/FEAT-2/meta.json")" == 4 ]]
+
+touch "$DOCKER_STATE_DIR/container-99"
+slots_out="$("$TEST_ROOT/platform/runtime/scripts/slots.sh" status)"
+grep -Fq 'orphaned-container' <<<"$slots_out"
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup --dry-run >/dev/null
+[[ -f "$DOCKER_STATE_DIR/container-99" ]]
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
+[[ ! -e "$DOCKER_STATE_DIR/container-99" ]]
+
+# Worktree management tests (worktrees.sh)
+"$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-4
+wt_active="$("$TEST_ROOT/platform/runtime/scripts/worktrees.sh" list --active)"
+grep -Fq 'worktrees/fixture-feat-2' <<<"$wt_active"
+grep -Fq 'worktrees/fixture-feat-3' <<<"$wt_active"
+if grep -Fq 'worktrees/fixture-feat-4' <<<"$wt_active"; then
+  printf 'error: stopped worktree listed as active\n' >&2
+  exit 1
+fi
+
+wt_inactive="$("$TEST_ROOT/platform/runtime/scripts/worktrees.sh" list --inactive)"
+grep -Fq 'worktrees/fixture-feat-4' <<<"$wt_inactive"
+
+wt_inspect="$("$TEST_ROOT/platform/runtime/scripts/worktrees.sh" inspect fixture/FEAT-3)"
+grep -Fq 'Link mode:       relative' <<<"$wt_inspect"
+grep -Fq 'Pool slot:       3' <<<"$wt_inspect"
+
+mkdir -p "$TEST_ROOT/worktrees/orphan-clean"
+mkdir -p "$TEST_ROOT/worktrees/orphan-dirty"
+git init -q "$TEST_ROOT/worktrees/orphan-dirty"
+printf 'dirty\n' >"$TEST_ROOT/worktrees/orphan-dirty/untracked.txt"
+
+wt_orphaned="$("$TEST_ROOT/platform/runtime/scripts/worktrees.sh" list --orphaned)"
+grep -Fq 'worktrees/orphan-clean' <<<"$wt_orphaned"
+grep -Fq 'worktrees/orphan-dirty' <<<"$wt_orphaned"
+
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup --dry-run >/dev/null
+[[ -d "$TEST_ROOT/worktrees/orphan-clean" ]]
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+[[ ! -e "$TEST_ROOT/worktrees/orphan-clean" ]]
+[[ -d "$TEST_ROOT/worktrees/orphan-dirty" ]]
+[[ -d "$TEST_ROOT/worktrees/fixture-feat-4" ]]
+
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup --inactive >/dev/null 2>&1
+[[ ! -e "$TEST_ROOT/worktrees/fixture-feat-4" ]]
+jq -e '
+  .lifecycleStage != "closed" and
+  .runtime.status == "stopped" and
+  .runtime.worktree == null and
+  .runtime.poolSlot == null
+' "$TEST_ROOT/workspaces/fixture/FEAT-4/meta.json" >/dev/null
 
 printf 'runtime lifecycle test passed\n'

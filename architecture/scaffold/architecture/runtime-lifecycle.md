@@ -30,6 +30,15 @@ to discard a dirty worktree, removes the container and worktree, frees the pool
 slot, and records `merged` or `abandoned` as the terminal state. `list`
 correlates persistent work items, pool slots, and live containers.
 
+`slots` (`platform/runtime/scripts/slots.sh`) provides direct pool-slot
+inspection and lifecycle management: viewing all slots (`1..RUNTIME_POOL_SIZE`)
+and orphaned containers, growing or resizing pool capacity, allocating a specific
+slot, recreating a slot's container, or releasing a slot from an inactive work
+item without closing the ticket. `worktrees`
+(`platform/runtime/scripts/worktrees.sh`) lists active, inactive, dirty, and
+orphaned worktrees, inspects link health, repairs relative Git paths, and prunes
+orphaned or clean inactive worktrees (`--dry-run` supported).
+
 The containers reuse the same built image rather than being copied from one
 another. GitHub CLI state remains outside the containers in `.local/state/gh`
 and is bind-mounted into each runtime, so new pool members do not require

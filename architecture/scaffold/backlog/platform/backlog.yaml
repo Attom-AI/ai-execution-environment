@@ -67,3 +67,25 @@
     - Document the host credential model in architecture/setup-guide.md and install-and-portability.md.
   related:
     - claude-code-interface
+
+- id: runtime-cli
+  status: open
+  summary: Provide a unified platform and runtime CLI that drives setup, worktree and slot operations, work-item execution, and LLM model/provider configuration.
+  context: >-
+    Operators and agents currently invoke individual shell scripts under platform/install/, platform/repositories/,
+    platform/workspace-scaffolder/, platform/runtime/scripts/, and platform/context/scripts/. A single command surface
+    can unify environment setup, repository onboarding, worktree/slot lifecycle, and LLM model registration without
+    duplicating underlying script logic.
+  decisions:
+    - Choose the CLI binary name and entrypoint location (e.g. platform/cli.sh exposed as aee or ai-env).
+    - Define the model and provider configuration schema (tracked defaults vs. operator-local .local/config/models.json).
+  steps:
+    - Add a top-level dispatcher CLI (setup, doctor, repos, work-items, worktrees, slots, runtime, context, models) delegating to platform scripts.
+    - Support interactive and non-interactive setup flows (plan, apply, auth verification, and project registration).
+    - Add LLM model and provider management subcommands (models list, add, remove, set-default, bind-stage) across Codex, Claude Code, Antigravity/Gemini, and custom/local endpoints.
+    - Wire model credentials and runtime container mounts through .local/state/ without storing secrets in tracked files.
+    - Add CLI integration tests and update architecture documentation.
+  related:
+    - orchestration-engine
+    - claude-code-interface
+    - host-credential-scoping

@@ -24,6 +24,8 @@ required_paths=(
   platform/interfaces/claude/hooks/restrict-writes.sh
   platform/repositories/providers/github.sh
   platform/runtime/.devcontainer/devcontainer.json
+  platform/runtime/scripts/slots.sh
+  platform/runtime/scripts/worktrees.sh
   platform/state/templates/meta.json
   platform/workflows/agents/ticket-coordinator.md
   platform/workspace-scaffolder/sources/github.sh
