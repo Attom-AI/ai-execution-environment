@@ -51,7 +51,7 @@ jq -n '{
 "$IDENTITY" init operator --mode host >/dev/null
 profile="$TEST_ROOT/.local/state/identities/iso"
 [[ -d "$profile/gh" && -f "$profile/git/config" && -f "$profile/ssh/known_hosts" ]] || fail "init did not create the profile layout"
-[[ "$(stat -f %Lp "$profile" 2>/dev/null || stat -c %a "$profile")" == 700 ]] || fail "profile directory is not private"
+[[ "$(stat -c %a "$profile" 2>/dev/null || stat -f %Lp "$profile")" == 700 ]] || fail "profile directory is not private"
 if "$IDENTITY" init iso --mode isolated --account bot >/dev/null 2>&1; then fail "duplicate identity was accepted"; fi
 if "$IDENTITY" init noaccount --mode isolated >/dev/null 2>&1; then fail "isolated identity without an account was accepted"; fi
 listing="$("$IDENTITY" list)"
