@@ -8,3 +8,4 @@ The executable control plane:
 - `state/`: lifecycle schema and cross-stage memory protocol
 - `runtime/`: disposable worktrees and an exclusive per-worktree container pool
 - `workflows/`: tool-neutral pipeline-stage definitions
+- `interfaces/`: agent-interface adapters that enforce existing policy

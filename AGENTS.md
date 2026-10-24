@@ -69,5 +69,6 @@ When asked to set up or onboard this workspace:
   visibly rather than hiding errors.
 
 Project-specific instructions belong in each project's own `AGENTS.md`.
-Operator-wide rules belong in `~/.codex/AGENTS.md` (or `~/.gemini/` for Antigravity) inside the VM because nested
+Operator-wide rules belong in `~/.codex/AGENTS.md` (or `~/.gemini/` for
+Antigravity, `~/.claude/CLAUDE.md` for Claude Code) inside the VM because nested
 repositories have their own repository roots.

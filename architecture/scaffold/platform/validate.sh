@@ -10,11 +10,18 @@ validate_projects
 
 required_paths=(
   .agents/skills/work-item-execution/SKILL.md
+  .claude/agents/ticket-coordinator.md
+  .claude/settings.json
+  .claude/skills/work-item-execution/SKILL.md
   .codex/skills/work-item-execution/SKILL.md
+  CLAUDE.md
   platform/context/scripts/init.sh
   platform/context/templates/manifest.json
   platform/install/setup.sh
   platform/install/templates/.env.example
+  platform/interfaces/claude/generate-agents.sh
+  platform/interfaces/claude/hooks/guard-outbound.sh
+  platform/interfaces/claude/hooks/restrict-writes.sh
   platform/repositories/providers/github.sh
   platform/runtime/.devcontainer/devcontainer.json
   platform/state/templates/meta.json
@@ -46,6 +53,16 @@ jq -e '
   (.partitions | type == "object")
 ' "$ROOT/platform/context/templates/manifest.json" >/dev/null \
   || die "invalid context manifest template"
+
+for skill in "$ROOT"/.agents/skills/*/SKILL.md; do
+  skill_name="$(basename "$(dirname "$skill")")"
+  for interface_dir in .codex .claude; do
+    cmp -s "$skill" "$ROOT/$interface_dir/skills/$skill_name/SKILL.md" \
+      || die "interface skill differs from .agents: $interface_dir/skills/$skill_name/SKILL.md"
+  done
+done
+
+"$ROOT/platform/interfaces/claude/generate-agents.sh" --check
 
 if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tracked_materialized="$(git -C "$ROOT" ls-files \
@@ -92,7 +109,7 @@ if [[ -d "$ROOT/architecture/scaffold" ]]; then
   jq -e '.version == 1 and .projects == []' \
     "$ROOT/architecture/scaffold/config/projects.json" >/dev/null \
     || die "portable scaffold must contain an empty project inventory"
-  portable_paths=(.agents .codex .editorconfig .github .gitignore AGENTS.md README.md backlog documentation platform)
+  portable_paths=(.agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md backlog documentation platform)
   for portable_path in "${portable_paths[@]}"; do
     diff -qr "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
       || die "portable scaffold is stale: $portable_path"
