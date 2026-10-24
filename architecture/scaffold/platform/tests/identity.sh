@@ -26,6 +26,12 @@ export GH_TOKEN=leaked-host-token
 export SSH_AUTH_SOCK="$TEST_ROOT/agent.sock"
 
 # gh stub: reports the profile it was given and a configurable login.
+cat >"$TEST_ROOT/bin/glab" <<'EOF'
+#!/usr/bin/env bash
+[[ "$1 $2" == 'api user' ]] || exit 2
+[[ -z "${STUB_GLAB_LOGIN:-}" ]] || printf '{"username":"%s"}\n' "$STUB_GLAB_LOGIN"
+EOF
+chmod +x "$TEST_ROOT/bin/glab"
 cat >"$TEST_ROOT/bin/gh" <<'EOF'
 #!/usr/bin/env bash
 case "$1 $2" in
@@ -42,6 +48,8 @@ jq -n '{
   projects: [
     {id: "iso", workspace: "ws", repository: {provider: "github", owner: "example", name: "iso", url: "https://bitbucket.org/example/iso.git", path: "repos/iso", identity: "iso"}, issues: {provider: "github", owner: "example", repository: "iso"}},
     {id: "shared", workspace: "shared", repository: {provider: "github", owner: "example", name: "shared", url: "https://bitbucket.org/example/shared.git", path: "repos/shared", identity: "operator"}, issues: {provider: "github", owner: "example", repository: "shared"}},
+    {id: "sshproject", workspace: "sshws", repository: {provider: "github", owner: "example", name: "sshproject", url: "git@github.com:example/sshproject.git", path: "repos/sshproject", identity: "sshid"}, issues: {provider: "github", owner: "example", repository: "sshproject"}},
+    {id: "httpsproject", workspace: "httpsws", repository: {provider: "github", owner: "example", name: "httpsproject", url: "https://github.com/example/httpsproject.git", path: "repos/httpsproject", identity: "sshid"}, issues: {provider: "github", owner: "example", repository: "httpsproject"}},
     {id: "unbound", workspace: "unbound", repository: {provider: "github", owner: "example", name: "unbound", url: "https://example.invalid/unbound.git", path: "repos/unbound"}, issues: {provider: "github", owner: "example", repository: "unbound"}}
   ]
 }' >"$TEST_ROOT/config/projects.json"
@@ -95,6 +103,31 @@ grep -q 'authenticated as someone-else, expected bot' "$TEST_ROOT/err" || fail "
 STUB_GH_LOGIN=bot "$RUN" --project iso -- git -C "$TEST_ROOT/nowhere" push 2>"$TEST_ROOT/err" || true
 grep -q 'gh authenticated as bot' "$TEST_ROOT/err" || fail "verified push did not report the account"
 grep -q 'failed verification' "$TEST_ROOT/err" && fail "matching account failed verification"
+# Global flags before the subcommand must not skip verification.
+for publish in 'gh -R example/iso pr create --fill' 'gh --repo example/iso pr merge 1' 'gh pr create'; do
+  read -ra publish_command <<<"$publish"
+  STUB_GH_LOGIN=someone-else "$RUN" --project iso -- "${publish_command[@]}" 2>"$TEST_ROOT/err" \
+    && fail "unverified publish ran: $publish"
+  grep -q 'failed verification' "$TEST_ROOT/err" || fail "publish skipped verification: $publish"
+done
+STUB_GH_LOGIN=someone-else "$RUN" --project iso -- gh pr view 1 2>"$TEST_ROOT/err" || true
+grep -q 'failed verification' "$TEST_ROOT/err" && fail "read-only gh command was treated as publishing"
+
+# SSH identities: only SSH remotes are probed, and transport mismatches are reported.
+"$IDENTITY" init sshid --mode isolated --account sshbot --transport ssh >/dev/null
+# shellcheck source=platform/identity/lib.sh
+source "$TEST_ROOT/platform/identity/lib.sh"
+[[ "$(identity_ssh_hosts sshid)" == github.com ]] || fail "SSH hosts include non-SSH remotes"
+STUB_GH_LOGIN=sshbot "$IDENTITY" check sshid >"$TEST_ROOT/out" 2>&1 && fail "transport mismatch passed verification"
+grep -q 'project httpsproject uses an https remote but the identity declares ssh transport' "$TEST_ROOT/out" \
+  || fail "transport mismatch not reported"
+grep -q 'git@https' "$TEST_ROOT/out" && fail "HTTPS remote probed over SSH"
+
+# Host mode verifies glab like gh when an account is declared.
+"$IDENTITY" init gitlab-host --mode host --account glbot >/dev/null
+STUB_GLAB_LOGIN=glbot "$IDENTITY" check gitlab-host >"$TEST_ROOT/out" 2>&1 || fail "host-mode glab account not accepted"
+grep -q 'glab authenticated as glbot' "$TEST_ROOT/out" || fail "host-mode glab not verified"
+STUB_GLAB_LOGIN=someone-else "$IDENTITY" check gitlab-host >/dev/null 2>&1 && fail "host-mode glab mismatch passed"
 
 # Work items: the recorded identity must match the project.
 jq -n '{workspace: "ws", workItem: "TASK-1", project: "iso", identity: {repository: "iso", issues: "iso"}}' \
@@ -106,8 +139,6 @@ mv "$TEST_ROOT/meta.json" "$TEST_ROOT/workspaces/ws/TASK-1/meta.json"
 grep -q 'identity drift' "$TEST_ROOT/err" || fail "identity drift error is unclear"
 
 # Containers receive one profile at a fixed mount point; host mode receives none.
-# shellcheck source=platform/identity/lib.sh
-source "$TEST_ROOT/platform/identity/lib.sh"
 container_args="$(identity_container_args iso)"
 grep -Fxq "type=bind,source=$profile,target=/home/vscode/.identity" <<<"$container_args" || fail "profile not mounted"
 grep -Fxq 'GH_CONFIG_DIR=/home/vscode/.identity/gh' <<<"$container_args" || fail "container gh profile path wrong"

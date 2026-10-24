@@ -178,16 +178,34 @@ identity_exec() {
   env ${unset_args[@]+"${unset_args[@]}"} "${assignments[@]}" "$@"
 }
 
-# Print the hosts of projects that use an identity over SSH.
+# SSH remotes are `ssh://...` or scp-like `user@host:path`.
+IDENTITY_SSH_URL='^(ssh://|[^@/:]+@[^:/]+:)'
+
+# Print the hosts of an identity's projects that use SSH remotes.
 identity_ssh_hosts() {
   local id="$1"
   validate_projects
-  jq -r --arg id "$id" '
+  jq -r --arg id "$id" --arg ssh "$IDENTITY_SSH_URL" '
+    .projects[]
+    | select(.repository.identity == $id and (.repository.url | test($ssh)))
+    | .repository.url
+    | capture("^(?:ssh://)?(?:[^@/]+@)?(?<host>[^:/]+)").host
+  ' "$PROJECTS_MANIFEST" | sort -u
+}
+
+# Print "<project> <url-transport>" for projects whose remote URL disagrees
+# with the identity's declared transport.
+identity_transport_mismatches() {
+  local id="$1"
+  local transport="$2"
+  validate_projects
+  jq -r --arg id "$id" --arg transport "$transport" --arg ssh "$IDENTITY_SSH_URL" '
     .projects[]
     | select(.repository.identity == $id)
-    | .repository.url
-    | capture("^(?:ssh://)?(?:[^@/]+@)?(?<host>[^:/]+)[:/]").host
-  ' "$PROJECTS_MANIFEST" 2>/dev/null | sort -u
+    | {id, url_transport: (if (.repository.url | test($ssh)) then "ssh" else "https" end)}
+    | select(.url_transport != $transport)
+    | "\(.id) \(.url_transport)"
+  ' "$PROJECTS_MANIFEST"
 }
 
 # Verify that every credential configured for an identity authenticates as its
@@ -224,10 +242,21 @@ identity_check() {
       report gh "$login"
     fi
   fi
-  if [[ "$mode" == isolated && -d "$host_dir/glab" ]] && command -v glab >/dev/null 2>&1; then
+  if { [[ "$mode" == isolated && -d "$host_dir/glab" ]] || [[ "$mode" == host ]]; } && command -v glab >/dev/null 2>&1; then
     login="$(identity_exec "$id" glab api user 2>/dev/null | jq -r '.username // empty' 2>/dev/null || true)"
-    report glab "$login"
+    if [[ -n "$login" || "$mode" == isolated ]]; then
+      report glab "$login"
+    fi
   fi
+  local mismatch project url_transport
+  while IFS= read -r mismatch; do
+    [[ -n "$mismatch" ]] || continue
+    project="${mismatch% *}"
+    url_transport="${mismatch#* }"
+    printf 'identity %s: project %s uses an %s remote but the identity declares %s transport\n' \
+      "$id" "$project" "$url_transport" "$transport" >&2
+    failed=1
+  done <<<"$(identity_transport_mismatches "$id" "$transport")"
   if [[ "$transport" == ssh ]]; then
     while IFS= read -r host; do
       [[ "$host" =~ ^[A-Za-z0-9.-]+$ ]] || { printf 'identity %s: skipping invalid host: %s\n' "$id" "$host" >&2; failed=1; continue; }

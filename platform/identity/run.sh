@@ -48,16 +48,28 @@ esac
 shift
 [[ "$#" -gt 0 ]] || { usage; exit 2; }
 
-# Verify the account before commands that publish under it.
+# Verify the account before commands that publish under it. Subcommands are
+# matched anywhere after the program so global flags (`gh -R <repo> pr create`)
+# cannot skip verification. This catches mistakes, not deliberate bypasses such
+# as raw API calls; profile isolation is what bounds those.
 outbound=0
-case "$1 ${2:-} ${3:-}" in
-  'gh pr create'*|'gh pr merge'*|'glab mr create'*|'glab mr merge'*) outbound=1 ;;
+arguments=("$@")
+case "$(basename "$1")" in
+  git)
+    for argument in "${arguments[@]:1}"; do
+      [[ "$argument" != push ]] || { outbound=1; break; }
+    done
+    ;;
+  gh|glab)
+    group='pr'
+    [[ "$(basename "$1")" == gh ]] || group='mr'
+    for ((index = 1; index + 1 < ${#arguments[@]}; index++)); do
+      if [[ "${arguments[index]}" == "$group" ]]; then
+        case "${arguments[index + 1]}" in create|merge) outbound=1; break ;; esac
+      fi
+    done
+    ;;
 esac
-if [[ "$1" == git ]]; then
-  for argument in "${@:2}"; do
-    [[ "$argument" != push ]] || { outbound=1; break; }
-  done
-fi
 if [[ "$outbound" -eq 1 ]]; then
   identity_check "$identity" >&2 || die "identity $identity failed verification; refusing to run: $*"
 fi

@@ -10,8 +10,9 @@ Named credential profiles that every Git and provider operation runs under. See
 - `identity.sh init <id> --mode host [--account <login>]`: declare a profile
   that deliberately uses host credentials.
 - `identity.sh check <id>|--all`: verify that each configured credential
-  authenticates as the declared account. This contacts providers and never
-  switches accounts.
+  (`gh`, `glab`, and SSH remotes) authenticates as the declared account, in
+  isolated and host mode, and that project remotes match the declared
+  transport. This contacts providers and never switches accounts.
 - `identity.sh env <id>`: print the environment an identity applies (paths
   only, no secrets).
 - `run.sh <workspace> <work-item> [--issues] -- <command>`: run a command under

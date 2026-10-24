@@ -238,7 +238,8 @@ jq -e '
   .runtime.status == "worktree-ready" and
   .runtime.worktree == "worktrees/fixture-feat-2" and
   .runtime.containerId == null and
-  .runtime.poolSlot == null
+  .runtime.poolSlot == null and
+  .runtime.identity == null
 ' "$TEST_ROOT/workspaces/fixture/FEAT-2/meta.json" >/dev/null
 
 feat3_old_container="$(jq -r '.runtime.containerId' "$TEST_ROOT/workspaces/fixture/FEAT-3/meta.json")"

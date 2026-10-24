@@ -57,8 +57,14 @@ both on the host and at its container mount point.
   `/home/vscode/.identity` and sets the matching environment. There is no other
   identity to choose. A container keeps the identity it was created with;
   starting it under a different identity fails until it is recreated.
-- Before `git push`, `gh pr create|merge`, or `glab mr create|merge`, `run.sh`
-  verifies that the profile authenticates as its declared `account`.
+- Before `git push`, `gh pr create|merge`, or `glab mr create|merge` (including
+  forms with global flags such as `gh -R <repo> pr create`), `run.sh` verifies
+  that the profile authenticates as its declared `account`. This catches
+  mistakes, not deliberate bypasses such as raw API calls; profile isolation is
+  what bounds those.
+- Verification also fails when a project's remote URL disagrees with the
+  identity's declared transport (an HTTPS remote under an `ssh` identity, or the
+  reverse), rather than probing the wrong host.
 
 Verification never logs in or switches accounts. A mismatch fails and names
 both accounts.
