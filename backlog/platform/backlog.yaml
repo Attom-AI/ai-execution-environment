@@ -15,13 +15,15 @@
   summary: Decide when closed work items should promote L3 context archives into curated project documentation.
 
 - id: claude-code-interface
-  status: open
+  status: in-progress
+  progress:
+    - Phase 1 (interactive parity) completed in 01be556; Phases 2 and 3 and remaining platform wiring are open.
   summary: Add native Claude Code support as a first-class interface alongside Codex and Antigravity, using thin adapters over the tool-neutral workflow definitions.
   decisions:
     - Choose the skill source of truth (recommended: .agents/skills/ canonical, synced into .codex/ and .claude/).
     - Choose the in-container Claude credential model (subscription login under .local/state/claude or an API key from host-local secret storage).
   steps:
-    # Phase 1: interactive parity
+    # Phase 1: interactive parity (done)
     - Add root CLAUDE.md that imports AGENTS.md and points to the work-item and onboarding skills.
     - Add .claude/skills/work-item-execution/SKILL.md and .claude/skills/repository-onboarding/SKILL.md identical to .agents/skills/.
     - Add tracked .claude/settings.json denying reads of .env, .env.* and .local/state/**, denying edits under repos/**, and allowing platform scripts.
