@@ -56,7 +56,7 @@
   context: >-
     .env sets GH_CONFIG_DIR=.local/state/gh and runtime containers use it, but no host script reads it.
     Host-side issue intake, doctor checks, and pushes therefore use whichever global gh account is active;
-    a push of dev failed as "Repository not found" until it was re-run with the platform credential scoped to that command.
+    a push can fail as "Repository not found" until it is re-run with the platform credential scoped to that command.
   steps:
     - Add a shared platform helper that reads GH_CONFIG_DIR from .env, resolves it relative to the workspace root, and exports it; fail visibly when it is configured but missing.
     - Use the helper in workspace-scaffolder (scaffold.sh, sources/github.sh) and the repository provider adapters.

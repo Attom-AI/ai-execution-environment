@@ -19,7 +19,7 @@ expect_pass() {
 }
 
 expect_ask 'git push origin main'
-expect_ask 'git -C repos/blog push --force-with-lease'
+expect_ask 'git -C repos/project push --force-with-lease'
 expect_ask 'cd worktrees/x && git push -u origin HEAD'
 expect_ask 'git clone https://github.com/example/repo repos/repo'
 expect_ask 'gh pr create --fill'
@@ -28,7 +28,7 @@ expect_ask 'gh repo clone example/repo'
 expect_ask 'gh -R example/repo pr create --fill'
 
 expect_pass 'git status --short'
-expect_pass 'git -C repos/blog fetch --dry-run'
+expect_pass 'git -C repos/project fetch --dry-run'
 expect_pass 'gh pr view 12'
 expect_pass 'gh pr list'
 expect_pass 'printf push'
