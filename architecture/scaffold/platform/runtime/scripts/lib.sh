@@ -72,12 +72,56 @@ acquire_pool_lock() {
   mkdir -p "$lock_root"
   for _ in {1..50}; do
     if mkdir "$lock" 2>/dev/null; then
+      printf '%s\n' "$$" >"$lock/pid"
       printf '%s\n' "$lock"
       return 0
     fi
     sleep 0.1
   done
   die "runtime pool is busy; retry after the current start operation finishes"
+}
+
+release_pool_lock() {
+  local lock="${1:-}"
+  [[ -n "$lock" ]] || return 0
+  rm -f "$lock/pid" 2>/dev/null || true
+  rmdir "$lock" 2>/dev/null || true
+}
+
+is_pool_lock_stale() {
+  local lock="$1"
+  [[ -d "$lock" ]] || return 1
+  local pid_file="$lock/pid"
+  if [[ ! -f "$pid_file" ]]; then
+    sleep 0.1
+    [[ -d "$lock" ]] || return 1
+  fi
+  if [[ -f "$pid_file" ]]; then
+    local lock_pid
+    lock_pid="$(tr -d '[:space:]' <"$pid_file" 2>/dev/null || true)"
+    if [[ "$lock_pid" =~ ^[0-9]+$ ]] && kill -0 "$lock_pid" 2>/dev/null; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
+is_valid_worktree_relpath() {
+  [[ "${1:-}" =~ ^worktrees/[a-z0-9][a-z0-9-]*$ ]]
+}
+
+resolve_safe_worktree_abspath() {
+  local wt_rel="${1:-}"
+  is_valid_worktree_relpath "$wt_rel" || return 1
+  local worktrees_root="$RUNTIME_ROOT/worktrees"
+  [[ -d "$worktrees_root" && ! -L "$worktrees_root" ]] || return 1
+  local target="$RUNTIME_ROOT/$wt_rel"
+  [[ ! -L "$target" ]] || return 1
+  local worktrees_real parent_real
+  worktrees_real="$(cd "$worktrees_root" 2>/dev/null && pwd -P)" || return 1
+  parent_real="$(cd "$(dirname "$target")" 2>/dev/null && pwd -P)" || return 1
+  [[ "$parent_real" == "$worktrees_real" ]] || return 1
+  printf '%s/%s\n' "$worktrees_real" "$(basename "$target")"
 }
 
 claim_pool_slot() {

@@ -217,8 +217,14 @@ cmd_release() {
   container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
   pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
 
-  if [[ "$remove_worktree" -eq 1 && -n "$worktree" && -e "$ROOT/$worktree" ]]; then
-    if [[ "$(worktree_git_state "$ROOT/$worktree")" == dirty ]]; then
+  local safe_wt=""
+  if [[ -n "$worktree" ]]; then
+    safe_wt="$(resolve_safe_worktree_abspath "$worktree" || true)"
+  fi
+
+  if [[ "$remove_worktree" -eq 1 && -n "$worktree" ]]; then
+    [[ -n "$safe_wt" ]] || die "refusing to remove invalid worktree path: $worktree"
+    if [[ -e "$safe_wt" && "$(worktree_git_state "$safe_wt")" == dirty ]]; then
       die "worktree has uncommitted changes; commit or clean it before releasing with --remove-worktree: $worktree"
     fi
   fi
@@ -234,16 +240,16 @@ cmd_release() {
   local new_worktree="$worktree"
   local new_status="stopped"
   if [[ "$remove_worktree" -eq 1 && -n "$worktree" ]]; then
-    if [[ -e "$ROOT/$worktree" ]]; then
+    if [[ -e "$safe_wt" ]]; then
       validate_projects
       project_id="$(jq -r '.project' "$meta")"
       project="$(project_by_id "$project_id")" || die "project not found: $project_id"
       repository_path="$(jq -r '.repository.path' <<<"$project")"
-      git -C "$ROOT/$repository_path" worktree remove "$ROOT/$worktree"
+      git -C "$ROOT/$repository_path" worktree remove "$safe_wt"
     fi
     new_worktree=""
     new_status="stopped"
-  elif [[ -n "$worktree" && -e "$ROOT/$worktree" ]]; then
+  elif [[ -n "$safe_wt" && -e "$safe_wt" ]]; then
     new_status="worktree-ready"
   else
     new_worktree=""
@@ -370,12 +376,12 @@ cmd_cleanup() {
   done < <(list_label_containers)
 
   local lock_dir="$ROOT/.local/state/runtime/pool.lock"
-  if [[ -d "$lock_dir" ]]; then
+  if is_pool_lock_stale "$lock_dir"; then
     cleaned=$((cleaned + 1))
     if [[ "$dry_run" -eq 1 ]]; then
       printf '[dry-run] would remove stale runtime pool lock %s\n' "$lock_dir"
     else
-      rmdir "$lock_dir" 2>/dev/null || true
+      release_pool_lock "$lock_dir"
       printf 'removed stale runtime pool lock\n'
     fi
   fi

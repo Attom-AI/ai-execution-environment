@@ -75,7 +75,7 @@ if [[ "$start_container" -eq 1 ]]; then
   require_command docker
   require_command devcontainer
   pool_lock="$(acquire_pool_lock)"
-  trap 'rmdir "$pool_lock" 2>/dev/null || true' EXIT
+  trap 'release_pool_lock "$pool_lock"' EXIT
   pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
   if [[ "$recreate_container" -eq 1 && -n "$container_id" ]]; then
     if docker inspect "$container_id" >/dev/null 2>&1; then
@@ -102,7 +102,7 @@ if [[ "$start_container" -eq 1 ]]; then
 else
   if [[ -n "$requested_slot" ]]; then
     pool_lock="$(acquire_pool_lock)"
-    trap 'rmdir "$pool_lock" 2>/dev/null || true' EXIT
+    trap 'release_pool_lock "$pool_lock"' EXIT
     pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
   fi
   runtime_status='worktree-ready'

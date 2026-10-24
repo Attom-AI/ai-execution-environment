@@ -279,4 +279,67 @@ jq -e '
   .runtime.poolSlot == null
 ' "$TEST_ROOT/workspaces/fixture/FEAT-4/meta.json" >/dev/null
 
+# Regression 1: Absolute-link repair in worktrees.sh repair
+repo_real="$(cd "$TEST_ROOT/repos/fixture" && pwd -P)"
+printf 'gitdir: %s/.git/worktrees/fixture-feat-3\n' "$repo_real" >"$TEST_ROOT/worktrees/fixture-feat-3/.git"
+wt_inspect_abs="$("$TEST_ROOT/platform/runtime/scripts/worktrees.sh" inspect fixture/FEAT-3)"
+grep -Fq 'Link mode:       absolute' <<<"$wt_inspect_abs"
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" repair >/dev/null
+wt_inspect_rel="$("$TEST_ROOT/platform/runtime/scripts/worktrees.sh" inspect fixture/FEAT-3)"
+grep -Fq 'Link mode:       relative' <<<"$wt_inspect_rel"
+grep -Eq '^gitdir: \.\./\.\./repos/fixture/\.git/worktrees/' "$TEST_ROOT/worktrees/fixture-feat-3/.git"
+
+# Regression 2: Registered orphan cleanup removes both directory and git worktree registration
+git -C "$TEST_ROOT/repos/fixture" worktree add -q -b feat/registered-orphan \
+  "$TEST_ROOT/worktrees/registered-orphan" origin/main
+[[ -d "$TEST_ROOT/repos/fixture/.git/worktrees/registered-orphan" ]]
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+[[ ! -e "$TEST_ROOT/worktrees/registered-orphan" ]]
+[[ ! -e "$TEST_ROOT/repos/fixture/.git/worktrees/registered-orphan" ]]
+
+# Regression 3: Malformed persisted worktree path (.. traversal) is never deleted outside worktrees/
+mkdir -p "$TEST_ROOT/escape-target"
+printf 'keep\n' >"$TEST_ROOT/escape-target/keep.txt"
+feat1_meta="$TEST_ROOT/workspaces/fixture/FEAT-1/meta.json"
+jq '.runtime.worktree = "worktrees/../escape-target"' "$feat1_meta" >"${feat1_meta}.tmp"
+mv "${feat1_meta}.tmp" "$feat1_meta"
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+[[ -f "$TEST_ROOT/escape-target/keep.txt" ]]
+[[ "$(jq -r '.runtime.worktree // "null"' "$feat1_meta")" == "null" ]]
+
+# Regression 4: worktrees.sh cleanup on a closed work item preserves live containerId/poolSlot for slots.sh cleanup
+touch "$DOCKER_STATE_DIR/container-77" "$DOCKER_STATE_DIR/container-77.running"
+jq '
+  .runtime.worktree = "worktrees/fixture-feat-1" |
+  .runtime.containerId = "container-77" |
+  .runtime.poolSlot = 1
+' "$feat1_meta" >"${feat1_meta}.tmp"
+mv "${feat1_meta}.tmp" "$feat1_meta"
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+jq -e '
+  .runtime.worktree == null and
+  .runtime.containerId == "container-77" and
+  .runtime.poolSlot == 1
+' "$feat1_meta" >/dev/null
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
+[[ ! -e "$DOCKER_STATE_DIR/container-77" ]]
+jq -e '
+  .runtime.worktree == null and
+  .runtime.containerId == null and
+  .runtime.poolSlot == null
+' "$feat1_meta" >/dev/null
+
+# Regression 5: slots.sh cleanup preserves live pool.lock and removes stale pool.lock
+lock_dir="$TEST_ROOT/.local/state/runtime/pool.lock"
+mkdir -p "$lock_dir"
+sleep 30 &
+live_pid=$!
+printf '%s\n' "$live_pid" >"$lock_dir/pid"
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
+[[ -d "$lock_dir" ]]
+kill "$live_pid" 2>/dev/null || true
+wait "$live_pid" 2>/dev/null || true
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
+[[ ! -d "$lock_dir" ]]
+
 printf 'runtime lifecycle test passed\n'

@@ -47,7 +47,12 @@ find_meta_for_worktree() {
 classify_worktree() {
   local wt_rel="$1"
   local meta="${2:-}"
-  local abs_path="$ROOT/$wt_rel"
+  local abs_path=""
+  abs_path="$(resolve_safe_worktree_abspath "$wt_rel" || true)"
+  if [[ -z "$abs_path" ]]; then
+    printf 'invalid\n'
+    return 0
+  fi
 
   if [[ -z "$meta" ]]; then
     printf 'orphaned\n'
@@ -117,10 +122,14 @@ find_repo_for_worktree_dir() {
       else
         resolved="$abs_path/$gitdir"
       fi
-      local common_git
-      common_git="$(cd "$(dirname "$resolved")/../.." 2>/dev/null && pwd -P || true)"
-      if [[ -n "$common_git" && -d "$common_git" ]]; then
-        dirname "$common_git"
+      local repo_root=""
+      repo_root="$(
+        if cd "$(dirname "$resolved")/../.." 2>/dev/null; then
+          pwd -P
+        fi
+      )"
+      if [[ -n "$repo_root" && -d "$repo_root/.git" ]]; then
+        printf '%s\n' "$repo_root"
         return 0
       fi
     fi
@@ -148,10 +157,14 @@ cmd_list() {
     [[ -n "$wt_rel" ]] || continue
     local meta=""
     meta="$(find_meta_for_worktree "$wt_rel" || true)"
-    local state git_state slot item_ref branch abs_path
+    local state git_state slot item_ref branch abs_path=""
     state="$(classify_worktree "$wt_rel" "$meta")"
-    abs_path="$ROOT/$wt_rel"
-    git_state="$(worktree_git_state "$abs_path")"
+    abs_path="$(resolve_safe_worktree_abspath "$wt_rel" || true)"
+    if [[ -n "$abs_path" ]]; then
+      git_state="$(worktree_git_state "$abs_path")"
+    else
+      git_state="invalid"
+    fi
 
     if [[ -n "$meta" ]]; then
       slot="$(jq -r '.runtime.poolSlot // "-"' "$meta")"
@@ -163,7 +176,7 @@ cmd_list() {
       branch="-"
     fi
 
-    if [[ -d "$abs_path" ]] && git -C "$abs_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if [[ -n "$abs_path" && -d "$abs_path" ]] && git -C "$abs_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       local live_branch
       live_branch="$(git -C "$abs_path" branch --show-current 2>/dev/null || true)"
       [[ -z "$live_branch" ]] || branch="$live_branch"
@@ -213,7 +226,9 @@ cmd_inspect() {
     meta="$(find_meta_for_worktree "$wt_rel" || true)"
   fi
 
-  local abs_path="$ROOT/$wt_rel"
+  local abs_path=""
+  abs_path="$(resolve_safe_worktree_abspath "$wt_rel" || true)"
+  [[ -n "$abs_path" ]] || die "invalid worktree path: $wt_rel"
   local state git_state link_mode="unregistered" branch="-"
   state="$(classify_worktree "$wt_rel" "$meta")"
   git_state="$(worktree_git_state "$abs_path")"
@@ -322,9 +337,32 @@ cmd_cleanup() {
     [[ -n "$wt_rel" ]] || continue
     local meta=""
     meta="$(find_meta_for_worktree "$wt_rel" || true)"
-    local state abs_path git_state
+    local abs_path=""
+    abs_path="$(resolve_safe_worktree_abspath "$wt_rel" || true)"
+    if [[ -z "$abs_path" ]]; then
+      printf 'warning: ignoring unsafe worktree path %s\n' "$wt_rel" >&2
+      if [[ -n "$meta" && "$(jq -r '.runtime.worktree // empty' "$meta")" == "$wt_rel" ]]; then
+        local dir ws wi cid slot next_status="stopped"
+        dir="$(dirname "$meta")"
+        ws="$(jq -r '.workspace' "$meta")"
+        wi="$(jq -r '.workItem' "$meta")"
+        cid="$(jq -r '.runtime.containerId // empty' "$meta")"
+        slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
+        [[ -n "$cid" && "$(inspect_container_status "$cid")" == running ]] && next_status="running"
+        actions=$((actions + 1))
+        if [[ "$dry_run" -eq 1 ]]; then
+          printf '[dry-run] would clear invalid worktree reference %s on %s/%s\n' "$wt_rel" "$ws" "$wi"
+        else
+          update_runtime_state "$meta" "$next_status" "" "$cid" "$slot" worktree-cleanup
+          record_history "$dir" "cleared invalid worktree reference $wt_rel"
+          printf 'cleared invalid worktree reference %s on %s/%s\n' "$wt_rel" "$ws" "$wi"
+        fi
+      fi
+      continue
+    fi
+
+    local state git_state
     state="$(classify_worktree "$wt_rel" "$meta")"
-    abs_path="$ROOT/$wt_rel"
     git_state="$(worktree_git_state "$abs_path")"
 
     if [[ "$state" == missing && -n "$meta" ]]; then
@@ -366,15 +404,17 @@ cmd_cleanup() {
         fi
       fi
       if [[ -n "$meta" && -n "$(jq -r '.runtime.worktree // empty' "$meta")" ]]; then
-        local dir ws wi
+        local dir ws wi cid slot
         dir="$(dirname "$meta")"
         ws="$(jq -r '.workspace' "$meta")"
         wi="$(jq -r '.workItem' "$meta")"
+        cid="$(jq -r '.runtime.containerId // empty' "$meta")"
+        slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
         actions=$((actions + 1))
         if [[ "$dry_run" -eq 1 ]]; then
           printf '[dry-run] would clear stale worktree pointer on closed work item %s/%s\n' "$ws" "$wi"
         else
-          update_runtime_state "$meta" stopped "" "" "" worktree-cleanup
+          update_runtime_state "$meta" stopped "" "$cid" "$slot" worktree-cleanup
           record_history "$dir" "cleared stale worktree pointer $wt_rel"
           printf 'cleared stale worktree pointer on closed work item %s/%s\n' "$ws" "$wi"
         fi
