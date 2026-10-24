@@ -340,9 +340,10 @@ cmd_cleanup() {
   done
 
   validate_projects
+  local lock_owner="${RUNTIME_POOL_LOCK_OWNER:-$$}"
   pool_lock="$(acquire_pool_lock)"
+  unset RUNTIME_POOL_LOCK_OWNER
   trap 'release_pool_lock "${pool_lock:-}"' EXIT
-  export RUNTIME_POOL_LOCK_OWNER="$$"
 
   local actions=0
   local repo_path
@@ -473,7 +474,7 @@ cmd_cleanup() {
       if [[ "$dry_run" -eq 1 ]]; then
         printf '[dry-run] would reclaim inactive worktree %s from %s/%s\n' "$wt_rel" "$ws" "$wi"
       else
-        "$ROOT/platform/runtime/scripts/slots.sh" release "$ws" "$wi" --remove-worktree >/dev/null
+        RUNTIME_POOL_LOCK_OWNER="$lock_owner" "$ROOT/platform/runtime/scripts/slots.sh" release "$ws" "$wi" --remove-worktree >/dev/null
         printf 'reclaimed inactive worktree %s from %s/%s\n' "$wt_rel" "$ws" "$wi"
       fi
     fi

@@ -74,7 +74,7 @@ acquire_pool_lock() {
     local lock_pid
     lock_pid="$(tr -d '[:space:]' <"$lock/pid" 2>/dev/null || true)"
     if [[ "$lock_pid" =~ ^[0-9]+$ ]] && kill -0 "$lock_pid" 2>/dev/null; then
-      if [[ "$lock_pid" == "$$" || "$lock_pid" == "${PPID:-}" || "$lock_pid" == "${RUNTIME_POOL_LOCK_OWNER:-}" ]]; then
+      if [[ "$lock_pid" == "$$" || ( -n "${RUNTIME_POOL_LOCK_OWNER:-}" && "$lock_pid" == "$RUNTIME_POOL_LOCK_OWNER" ) ]]; then
         printf '\n'
         return 0
       fi
@@ -95,7 +95,15 @@ acquire_pool_lock() {
 
 release_pool_lock() {
   local lock="${1:-}"
-  [[ -n "$lock" ]] || return 0
+  local expected_pid="${2:-$$}"
+  [[ -n "$lock" && -d "$lock" ]] || return 0
+  if [[ -f "$lock/pid" ]]; then
+    local lock_pid
+    lock_pid="$(tr -d '[:space:]' <"$lock/pid" 2>/dev/null || true)"
+    if [[ -n "$lock_pid" && "$lock_pid" != "$expected_pid" ]]; then
+      return 0
+    fi
+  fi
   rm -f "$lock/pid" 2>/dev/null || true
   rmdir "$lock" 2>/dev/null || true
 }
@@ -104,10 +112,12 @@ is_pool_lock_stale() {
   local lock="$1"
   [[ -d "$lock" ]] || return 1
   local pid_file="$lock/pid"
-  if [[ ! -f "$pid_file" ]]; then
-    sleep 0.1
-    [[ -d "$lock" ]] || return 1
-  fi
+  local wait_i
+  for ((wait_i = 1; wait_i <= 5; wait_i++)); do
+    [[ -f "$pid_file" || ! -d "$lock" ]] && break
+    sleep 0.05
+  done
+  [[ -d "$lock" ]] || return 1
   if [[ -f "$pid_file" ]]; then
     local lock_pid
     lock_pid="$(tr -d '[:space:]' <"$pid_file" 2>/dev/null || true)"
@@ -116,6 +126,31 @@ is_pool_lock_stale() {
     fi
   fi
   return 0
+}
+
+reclaim_stale_pool_lock() {
+  local lock="$1"
+  [[ -d "$lock" ]] || return 1
+  local reclaim_lock="${lock}.reclaim"
+  local i
+  for ((i = 1; i <= 50; i++)); do
+    if mkdir "$reclaim_lock" 2>/dev/null; then
+      if is_pool_lock_stale "$lock"; then
+        local claimed="${lock}.stale.$$"
+        rm -rf "$claimed" 2>/dev/null || true
+        if mv "$lock" "$claimed" 2>/dev/null; then
+          rm -f "$claimed/pid" 2>/dev/null || true
+          rmdir "$claimed" 2>/dev/null || true
+          rmdir "$reclaim_lock" 2>/dev/null || true
+          return 0
+        fi
+      fi
+      rmdir "$reclaim_lock" 2>/dev/null || true
+      return 1
+    fi
+    sleep 0.05
+  done
+  return 1
 }
 
 is_valid_worktree_relpath() {

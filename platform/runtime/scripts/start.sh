@@ -54,16 +54,20 @@ worktree="worktrees/${worktree_id%-}"
 target="$ROOT/$worktree"
 target_real="$(cd "$(dirname "$target")" && pwd -P)/$(basename "$target")"
 
-container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
-pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
-
 if [[ "$start_container" -eq 1 ]]; then
   require_command docker
   require_command devcontainer
 fi
 pool_lock="$(acquire_pool_lock)"
+unset RUNTIME_POOL_LOCK_OWNER
 trap 'release_pool_lock "${pool_lock:-}"' EXIT
-export RUNTIME_POOL_LOCK_OWNER="$$"
+
+[[ "$(jq -r '.lifecycleStage' "$meta")" != closed ]] || die "work item is closed: $workspace/$work_item"
+branch="$(jq -r '.design.branch // empty' "$meta")"
+[[ -n "$branch" ]] || die "work item has no design branch: $workspace/$work_item"
+container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
+pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
+
 if [[ "$start_container" -eq 1 || -n "$requested_slot" ]]; then
   pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
 fi
@@ -91,12 +95,20 @@ if [[ "$start_container" -eq 1 ]]; then
     container_id=''
     update_runtime_state "$meta" worktree-ready "$worktree" '' "$pool_slot" runtime-start
   fi
-  if [[ -n "$container_id" ]] && docker inspect "$container_id" >/dev/null 2>&1; then
-    container_status="$(docker inspect -f '{{.State.Status}}' "$container_id")"
-    if [[ "$container_status" != running ]]; then
+  if [[ -n "$container_id" ]]; then
+    c_status="$(inspect_container_status "$container_id")"
+    [[ "$c_status" != unavailable ]] || die "docker is unavailable; cannot inspect container $container_id"
+    if [[ "$c_status" == missing ]]; then
+      container_id=''
+    fi
+  fi
+  if [[ -n "$container_id" ]]; then
+    if [[ "$c_status" != running ]]; then
+      update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" "$pool_slot" runtime-start
       docker start "$container_id" >/dev/null
     fi
   else
+    update_runtime_state "$meta" worktree-ready "$worktree" '' "$pool_slot" runtime-start
     export EXECUTION_ROOT="$ROOT"
     up_result="$(devcontainer up \
       --workspace-folder "$target" \

@@ -186,9 +186,14 @@ cmd_allocate() {
     esac
   done
 
-  local directory meta
+  local directory meta lock_owner
   directory="$(require_work_item "$workspace" "$work_item")"
   meta="$directory/meta.json"
+  lock_owner="${RUNTIME_POOL_LOCK_OWNER:-$$}"
+  pool_lock="$(acquire_pool_lock)"
+  unset RUNTIME_POOL_LOCK_OWNER
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+
   if [[ -z "$requested_slot" && "$no_container" -eq 1 ]]; then
     requested_slot="$(claim_pool_slot "$meta")"
   fi
@@ -197,7 +202,7 @@ cmd_allocate() {
   [[ -z "$requested_slot" ]] || args+=(--slot "$requested_slot")
   [[ -z "$start_point" ]] || args+=(--start-point "$start_point")
   [[ "$no_container" -eq 0 ]] || args+=(--no-container)
-  "$ROOT/platform/runtime/scripts/start.sh" "${args[@]}"
+  RUNTIME_POOL_LOCK_OWNER="$lock_owner" "$ROOT/platform/runtime/scripts/start.sh" "${args[@]}"
 }
 
 cmd_release() {
@@ -213,20 +218,21 @@ cmd_release() {
     esac
   done
 
-  local meta
-  if [[ "${#positional[@]}" -eq 1 ]]; then
-    meta="$(resolve_target_meta "${positional[0]}")"
-  elif [[ "${#positional[@]}" -eq 2 ]]; then
-    meta="$(resolve_target_meta "${positional[0]}" "${positional[1]}")"
-  else
+  if [[ "${#positional[@]}" -ne 1 && "${#positional[@]}" -ne 2 ]]; then
     usage
     exit 2
   fi
 
-  local directory workspace work_item worktree container_id pool_slot runtime_status c_status="none" project_id project repository_path
+  local directory meta workspace work_item worktree container_id pool_slot runtime_status c_status="none" project_id project repository_path
   pool_lock="$(acquire_pool_lock)"
+  unset RUNTIME_POOL_LOCK_OWNER
   trap 'release_pool_lock "${pool_lock:-}"' EXIT
-  export RUNTIME_POOL_LOCK_OWNER="$$"
+
+  if [[ "${#positional[@]}" -eq 1 ]]; then
+    meta="$(resolve_target_meta "${positional[0]}")"
+  else
+    meta="$(resolve_target_meta "${positional[0]}" "${positional[1]}")"
+  fi
 
   directory="$(dirname "$meta")"
   workspace="$(jq -r '.workspace' "$meta")"
@@ -307,17 +313,23 @@ cmd_recreate() {
     esac
   done
 
-  local meta
-  if [[ "${#positional[@]}" -eq 1 ]]; then
-    meta="$(resolve_target_meta "${positional[0]}")"
-  elif [[ "${#positional[@]}" -eq 2 ]]; then
-    meta="$(resolve_target_meta "${positional[0]}" "${positional[1]}")"
-  else
+  if [[ "${#positional[@]}" -ne 1 && "${#positional[@]}" -ne 2 ]]; then
     usage
     exit 2
   fi
 
-  local workspace work_item pool_slot
+  local meta workspace work_item pool_slot lock_owner
+  lock_owner="${RUNTIME_POOL_LOCK_OWNER:-$$}"
+  pool_lock="$(acquire_pool_lock)"
+  unset RUNTIME_POOL_LOCK_OWNER
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+
+  if [[ "${#positional[@]}" -eq 1 ]]; then
+    meta="$(resolve_target_meta "${positional[0]}")"
+  else
+    meta="$(resolve_target_meta "${positional[0]}" "${positional[1]}")"
+  fi
+
   workspace="$(jq -r '.workspace' "$meta")"
   work_item="$(jq -r '.workItem' "$meta")"
   pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
@@ -325,7 +337,7 @@ cmd_recreate() {
   local args=("$workspace" "$work_item" --recreate-container)
   [[ -z "$pool_slot" ]] || args+=(--slot "$pool_slot")
   [[ -z "$start_point" ]] || args+=(--start-point "$start_point")
-  "$ROOT/platform/runtime/scripts/start.sh" "${args[@]}"
+  RUNTIME_POOL_LOCK_OWNER="$lock_owner" "$ROOT/platform/runtime/scripts/start.sh" "${args[@]}"
 }
 
 cmd_cleanup() {
@@ -339,20 +351,20 @@ cmd_cleanup() {
 
   local cleaned=0
   local lock_dir="$ROOT/.local/state/runtime/pool.lock"
-  if is_pool_lock_stale "$lock_dir"; then
-    cleaned=$((cleaned + 1))
-    if [[ "$dry_run" -eq 1 ]]; then
+  if [[ "$dry_run" -eq 1 ]]; then
+    if is_pool_lock_stale "$lock_dir"; then
+      cleaned=$((cleaned + 1))
       printf '[dry-run] would remove stale runtime pool lock %s\n' "$lock_dir"
-    else
-      release_pool_lock "$lock_dir"
-      printf 'removed stale runtime pool lock\n'
     fi
+  elif reclaim_stale_pool_lock "$lock_dir"; then
+    cleaned=$((cleaned + 1))
+    printf 'removed stale runtime pool lock\n'
   fi
 
   if [[ "$dry_run" -eq 0 || ! -d "$lock_dir" ]]; then
     pool_lock="$(acquire_pool_lock)"
+    unset RUNTIME_POOL_LOCK_OWNER
     trap 'release_pool_lock "${pool_lock:-}"' EXIT
-    export RUNTIME_POOL_LOCK_OWNER="$$"
   fi
 
   local meta

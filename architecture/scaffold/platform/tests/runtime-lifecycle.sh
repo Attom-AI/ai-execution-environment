@@ -52,6 +52,9 @@ case "${1:-}" in
     rm -f "$state/$id" "$state/$id.running"
     ;;
   ps)
+    if [[ -n "${DOCKER_PS_DELAY:-}" ]]; then
+      sleep "$DOCKER_PS_DELAY"
+    fi
     for f in "$state"/container-*; do
       [[ -f "$f" && "$f" != *.running ]] || continue
       basename "$f"
@@ -414,9 +417,16 @@ fi
 jq -e '.runtime.status == "running" and .runtime.poolSlot == 3 and .runtime.containerId != null' "$feat3_meta" >/dev/null
 
 # Regression 11: Concurrent start.sh and slots.sh cleanup serialize so new container is not deleted as orphan
-DEVCONTAINER_DELAY=0.4 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
+prev_counter="$(<"$DOCKER_STATE_DIR/counter")"
+DEVCONTAINER_DELAY=0.5 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
 start_pid=$!
-sleep 0.1
+for _ in $(seq 1 40); do
+  if [[ "$(<"$DOCKER_STATE_DIR/counter")" -gt "$prev_counter" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]; then
+    break
+  fi
+  sleep 0.05
+done
+[[ "$(<"$DOCKER_STATE_DIR/counter")" -gt "$prev_counter" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]
 "$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
 wait "$start_pid"
 feat4_meta="$TEST_ROOT/workspaces/fixture/FEAT-4/meta.json"
@@ -425,10 +435,17 @@ feat4_cid="$(jq -r '.runtime.containerId' "$feat4_meta")"
 
 # Regression 12: Concurrent start.sh and worktrees.sh cleanup --inactive serialize on pool.lock
 "$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-4 >/dev/null
-"$TEST_ROOT/platform/runtime/scripts/slots.sh" release fixture FEAT-4 >/dev/null
-DEVCONTAINER_DELAY=0.4 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release fixture FEAT-4 --remove-worktree >/dev/null
+[[ ! -e "$TEST_ROOT/worktrees/fixture-feat-4" ]]
+DEVCONTAINER_DELAY=0.5 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
 start_pid=$!
-sleep 0.1
+for _ in $(seq 1 40); do
+  if [[ -e "$TEST_ROOT/worktrees/fixture-feat-4/.git" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]; then
+    break
+  fi
+  sleep 0.05
+done
+[[ -e "$TEST_ROOT/worktrees/fixture-feat-4/.git" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]
 "$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup --inactive >/dev/null 2>&1
 wait "$start_pid"
 [[ -d "$TEST_ROOT/worktrees/fixture-feat-4" ]]
@@ -477,5 +494,54 @@ if "$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup 2>/dev/null; then
 fi
 [[ -d "$TEST_ROOT/worktrees/external-wt" ]]
 git -C "$TEST_ROOT/external-repo" worktree remove --force "$TEST_ROOT/worktrees/external-wt"
+
+# Regression 16: Failed start.sh after new worktree creation persists worktree-ready and claimed slot
+"$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-4 >/dev/null
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release fixture FEAT-4 --remove-worktree >/dev/null
+if DEVCONTAINER_FAIL=1 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 2>/dev/null; then
+  printf 'error: start.sh succeeded when devcontainer up failed\n' >&2
+  exit 1
+fi
+[[ -d "$TEST_ROOT/worktrees/fixture-feat-4" ]]
+jq -e '
+  .runtime.status == "worktree-ready" and
+  .runtime.worktree == "worktrees/fixture-feat-4" and
+  .runtime.containerId == null and
+  .runtime.poolSlot != null
+' "$feat4_meta" >/dev/null
+"$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null
+
+# Regression 17: Unopted-in child process cannot bypass pool.lock via PPID
+(
+  # shellcheck source=platform/runtime/scripts/lib.sh
+  source "$TEST_ROOT/platform/runtime/scripts/lib.sh"
+  lock_path="$(acquire_pool_lock)"
+  trap 'release_pool_lock "$lock_path"' EXIT
+  if RUNTIME_POOL_LOCK_RETRIES=1 "$TEST_ROOT/platform/runtime/scripts/slots.sh" add 1 2>/dev/null; then
+    printf 'error: child process bypassed pool.lock without explicit RUNTIME_POOL_LOCK_OWNER\n' >&2
+    exit 1
+  fi
+)
+
+# Regression 18: Two concurrent slots.sh cleanup runs on a stale pool.lock reclaim it once and preserve the live replacement lock
+mkdir -p "$lock_dir"
+printf '999999\n' >"$lock_dir/pid"
+DOCKER_PS_DELAY=0.4 "$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >"$TEST_ROOT/cleanup-1.out" &
+cleanup1_pid=$!
+DOCKER_PS_DELAY=0.4 "$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >"$TEST_ROOT/cleanup-2.out" &
+cleanup2_pid=$!
+for _ in $(seq 1 40); do
+  if [[ -f "$lock_dir/pid" && "$(tr -d '[:space:]' <"$lock_dir/pid" 2>/dev/null || true)" != "999999" ]]; then
+    break
+  fi
+  sleep 0.05
+done
+if RUNTIME_POOL_LOCK_RETRIES=1 "$TEST_ROOT/platform/runtime/scripts/slots.sh" add 1 2>/dev/null; then
+  printf 'error: concurrent cleanup deleted the replacement live pool.lock\n' >&2
+  exit 1
+fi
+wait "$cleanup1_pid" "$cleanup2_pid"
+reclaim_count="$(grep -Fc 'removed stale runtime pool lock' "$TEST_ROOT/cleanup-1.out" "$TEST_ROOT/cleanup-2.out" | awk -F: '{s+=$2} END {print s+0}')"
+[[ "$reclaim_count" -eq 1 ]]
 
 printf 'runtime lifecycle test passed\n'
