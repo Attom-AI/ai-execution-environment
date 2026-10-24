@@ -10,12 +10,19 @@ repositories or Git actions.
 
 ## Inputs and defaults
 
-Require the repository URL, repository provider, project id, workspace id, and
-issue source. Accept an optional managed path.
+Require the repository URL, repository provider, project id, workspace id,
+issue source, and identity profile. Accept an optional managed path and a
+separate issue-source identity.
 
 - Derive a missing project id from the final repository URL component and remove a
   trailing `.git`.
 - Default the managed path to `repos/<project-id>`.
+- Ask which identity profile the project uses; never infer it from the
+  currently active account. List profiles with
+  `./platform/identity/identity.sh list`. When none fits, explain the
+  `isolated` and `host` modes and let the operator create one with
+  `./platform/identity/identity.sh init`; authentication remains a separate,
+  explicit step.
 - Confirm that the repository belongs to the workspace's selected trust domain
   when its scope is ambiguous. Do not add out-of-scope code, credentials, or
   data.
@@ -41,8 +48,9 @@ branches, or rewrite a working tree as part of onboarding.
 ## Register the repository
 
 1. Add exactly one project object matching the existing schema, including the
-   repository provider, owner, and repository name, to
-   `config/projects.json`.
+   repository provider, owner, repository name, and `repository.identity`
+   (plus `issues.identity` when the issue source uses a different identity),
+   to `config/projects.json`.
 2. Sort project objects by `id` for stable diffs. Preserve unrelated
    entries and formatting.
 3. Run `./platform/validate.sh`. If it fails, report the error and repair only the

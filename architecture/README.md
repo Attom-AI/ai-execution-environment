@@ -11,6 +11,7 @@ instance.
 - `state-model.md`: cold-start and cross-stage memory
 - `context-memory-model.md`: L0/L1/L2/L3 sliding window, WAL, LSM compaction, and session snapshots
 - `runtime-lifecycle.md`: safe repository, worktree, and container behavior
+- `identity-model.md`: per-project credential profiles and isolation
 - `scaffolding-and-intake.md`: issue and repository provider seams
 - `documentation-kb.md`: durable project knowledge
 - `install-and-portability.md`: machine-local bootstrap contract

@@ -3,10 +3,23 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=platform/repositories/lib.sh
-source "$ROOT/platform/repositories/lib.sh"
+# shellcheck source=platform/identity/lib.sh
+source "$ROOT/platform/identity/lib.sh"
 
 validate_projects
+
+# Instance check: every identity a project references must be a configured profile.
+if [[ -f "$IDENTITIES_FILE" ]]; then
+  validate_identities
+  unresolved="$(jq -r --slurpfile identities "$IDENTITIES_FILE" '
+    .projects[]
+    | . as $project
+    | [.repository.identity, .issues.identity][]
+    | select(. != null and ($identities[0].identities | has(.) | not))
+    | "\($project.id): \(.)"' "$PROJECTS_MANIFEST")"
+  [[ -z "$unresolved" ]] || die "projects reference unknown identity profiles:
+$unresolved"
+fi
 
 required_paths=(
   .agents/skills/work-item-execution/SKILL.md
@@ -18,6 +31,9 @@ required_paths=(
   platform/context/scripts/init.sh
   platform/context/templates/manifest.json
   platform/install/setup.sh
+  platform/identity/identity.sh
+  platform/identity/lib.sh
+  platform/identity/run.sh
   platform/install/templates/.env.example
   platform/interfaces/claude/generate-agents.sh
   platform/interfaces/claude/hooks/guard-outbound.sh
@@ -37,6 +53,7 @@ done
 jq -e '
   .schemaVersion == 1 and
   (.lifecycleStage | type == "string") and
+  (.identity | type == "object") and
   (.gates | type == "object") and
   (.loops | type == "object") and
   (.resume | type == "object") and

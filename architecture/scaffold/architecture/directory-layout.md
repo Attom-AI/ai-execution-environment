@@ -12,7 +12,7 @@ The root separates reusable control-plane material from local execution data.
 | `repos/` | Canonical independent Git repositories | local, ignored |
 | `workspaces/` | Durable project-specific work-item records | local, ignored |
 | `worktrees/` | Flat disposable Git worktrees | local, ignored |
-| `.local/` | Host-local credentials and runtime support state | local, ignored |
+| `.local/` | Host-local identity profiles (`state/identities/`) and runtime support state | local, ignored |
 | `.env` | Operator-selected local configuration | local, ignored |
 
 `repos/`, `workspaces/`, and `worktrees/` are intentionally separate. A

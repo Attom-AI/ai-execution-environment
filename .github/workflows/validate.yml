@@ -34,3 +34,6 @@ jobs:
 
       - name: Test Claude Code interface
         run: ./platform/tests/claude-interface.sh
+
+      - name: Test identity profiles
+        run: ./platform/tests/identity.sh

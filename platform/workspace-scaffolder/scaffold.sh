@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# shellcheck source=platform/repositories/lib.sh
-source "$ROOT/platform/repositories/lib.sh"
+# shellcheck source=platform/identity/lib.sh
+source "$ROOT/platform/identity/lib.sh"
 
 usage() {
   printf 'usage: %s <workspace-id> <issue-ref> [--type FEAT|FIX|TASK] [--no-start] [--start-point <ref>]\n' "$0" >&2
@@ -34,8 +34,10 @@ owner="$(jq -r '.issues.owner' <<<"$project")"
 repository="$(jq -r '.issues.repository' <<<"$project")"
 adapter="$ROOT/platform/workspace-scaffolder/sources/$source_name.sh"
 [[ -x "$adapter" ]] || die "unsupported issue provider: $source_name"
+repository_identity="$(project_identity "$project" repository)"
+issues_identity="$(project_identity "$project" issues)"
 
-ticket_json="$("$adapter" "$issue_ref" --repo "$owner/$repository")"
+ticket_json="$(identity_exec "$issues_identity" "$adapter" "$issue_ref" --repo "$owner/$repository")"
 number="$(jq -r '.number' <<<"$ticket_json")"
 item_type="${type_override:-$(jq -r '.type // empty' <<<"$ticket_json")}"
 case "$item_type" in FEAT|FIX|TASK) ;; *) die "unable to determine type; pass --type FEAT, FIX, or TASK" ;; esac
@@ -68,9 +70,12 @@ if [[ ! -f "$target/meta.json" ]]; then
     --arg url "$(jq -r '.url' <<<"$ticket_json")" \
     --arg branch "$branch" \
     --arg timestamp "$timestamp" \
+    --arg repository_identity "$repository_identity" \
+    --arg issues_identity "$issues_identity" \
     '.workspace = $workspace
      | .workItem = $work_item
      | .project = $project
+     | .identity = {repository: $repository_identity, issues: $issues_identity}
      | .source = {provider: $source, key: $key, url: $url}
      | .design.branch = $branch
      | .resume.lastUpdatedAt = $timestamp' \

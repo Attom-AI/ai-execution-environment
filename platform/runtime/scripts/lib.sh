@@ -49,6 +49,7 @@ update_runtime_state() {
     '.runtime.status = $status
      | .runtime.worktree = (if $worktree == "" then null else $worktree end)
      | .runtime.containerId = (if $container_id == "" then null else $container_id end)
+     | .runtime.identity = (if $container_id == "" then null else .runtime.identity end)
      | .runtime.poolSlot = (if $pool_slot == "" then null else ($pool_slot | tonumber) end)
      | .resume.lastUpdatedBy = $actor
      | .resume.lastUpdatedAt = $timestamp' \
