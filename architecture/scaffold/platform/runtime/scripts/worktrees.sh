@@ -110,6 +110,23 @@ collect_worktree_relpaths() {
   fi
 }
 
+is_configured_repo_root() {
+  local candidate_real="$1"
+  local repo_path configured_real
+  while IFS= read -r repo_path; do
+    [[ -n "$repo_path" && -d "$ROOT/$repo_path/.git" ]] || continue
+    configured_real="$(
+      if cd "$ROOT/$repo_path" 2>/dev/null; then
+        pwd -P
+      fi
+    )"
+    if [[ -n "$configured_real" && "$candidate_real" == "$configured_real" ]]; then
+      return 0
+    fi
+  done < <(jq -r '.projects[].repository.path' "$PROJECTS_MANIFEST" 2>/dev/null || true)
+  return 1
+}
+
 find_repo_for_worktree_dir() {
   local abs_path="$1"
   if [[ -f "$abs_path/.git" ]]; then
@@ -128,10 +145,11 @@ find_repo_for_worktree_dir() {
           pwd -P
         fi
       )"
-      if [[ -n "$repo_root" && -d "$repo_root/.git" ]]; then
+      if [[ -n "$repo_root" && -d "$repo_root/.git" ]] && is_configured_repo_root "$repo_root"; then
         printf '%s\n' "$repo_root"
         return 0
       fi
+      return 1
     fi
   fi
 
@@ -293,14 +311,14 @@ cmd_repair() {
       [[ -f "$wt_dir/.git" ]] || continue
       local gitdir_line repo_dir wt_real
       gitdir_line="$(sed -n 's/^gitdir: //p' "$wt_dir/.git")"
+      repo_dir="$(find_repo_for_worktree_dir "$wt_dir" || true)"
+      [[ -n "$repo_dir" && -d "$repo_dir/.git" ]] \
+        || die "cannot resolve configured canonical repository for worktrees/$(basename "$wt_dir")"
       if [[ "$gitdir_line" == /* ]]; then
         wt_real="$(cd "$(dirname "$wt_dir")" && pwd -P)/$(basename "$wt_dir")"
-        repo_dir="$(find_repo_for_worktree_dir "$wt_dir" || true)"
-        if [[ -n "$repo_dir" && -d "$repo_dir/.git" ]]; then
-          git -C "$repo_dir" worktree repair --relative-paths "$wt_real"
-          printf 'repaired relative path for worktrees/%s\n' "$(basename "$wt_dir")"
-          repaired=$((repaired + 1))
-        fi
+        git -C "$repo_dir" worktree repair --relative-paths "$wt_real"
+        printf 'repaired relative path for worktrees/%s\n' "$(basename "$wt_dir")"
+        repaired=$((repaired + 1))
       fi
     done < <(find "$ROOT/worktrees" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | sort)
   fi
@@ -322,6 +340,10 @@ cmd_cleanup() {
   done
 
   validate_projects
+  pool_lock="$(acquire_pool_lock)"
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+  export RUNTIME_POOL_LOCK_OWNER="$$"
+
   local actions=0
   local repo_path
 
@@ -400,6 +422,10 @@ cmd_cleanup() {
           printf 'warning: skipping dirty orphaned worktree %s\n' "$wt_rel" >&2
           continue
         fi
+        if [[ "$git_state" == error ]] || [[ "$git_state" == invalid && -e "$abs_path/.git" && ! -f "$abs_path/.git" ]]; then
+          printf 'warning: skipping orphaned worktree with %s git state %s\n' "$git_state" "$wt_rel" >&2
+          continue
+        fi
         actions=$((actions + 1))
         if [[ "$dry_run" -eq 1 ]]; then
           printf '[dry-run] would remove orphaned worktree %s\n' "$wt_rel"
@@ -436,8 +462,8 @@ cmd_cleanup() {
     fi
 
     if [[ "$state" == inactive && "$include_inactive" -eq 1 && -e "$abs_path" ]]; then
-      if [[ "$git_state" == dirty ]]; then
-        printf 'warning: skipping dirty inactive worktree %s\n' "$wt_rel" >&2
+      if [[ "$git_state" != clean ]]; then
+        printf 'warning: skipping %s inactive worktree %s\n' "$git_state" "$wt_rel" >&2
         continue
       fi
       local ws wi
@@ -452,6 +478,9 @@ cmd_cleanup() {
       fi
     fi
   done < <(collect_worktree_relpaths)
+
+  release_pool_lock "${pool_lock:-}"
+  pool_lock=""
 
   if [[ "$actions" -eq 0 ]]; then
     printf 'no worktree cleanup needed\n'

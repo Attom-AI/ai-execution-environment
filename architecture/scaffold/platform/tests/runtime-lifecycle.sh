@@ -66,12 +66,19 @@ cat >"$TEST_ROOT/bin/devcontainer" <<'EOF'
 set -euo pipefail
 state="${DOCKER_STATE_DIR:?}"
 [[ "${1:-}" == up ]]
+if [[ "${DEVCONTAINER_FAIL:-0}" == 1 ]]; then
+  printf 'devcontainer up failed\n' >&2
+  exit 1
+fi
 counter=0
 [[ ! -f "$state/counter" ]] || counter="$(<"$state/counter")"
 counter=$((counter + 1))
 printf '%s\n' "$counter" >"$state/counter"
 id="container-$counter"
 touch "$state/$id" "$state/$id.running"
+if [[ -n "${DEVCONTAINER_DELAY:-}" ]]; then
+  sleep "$DEVCONTAINER_DELAY"
+fi
 printf '{"containerId":"%s"}\n' "$id"
 EOF
 chmod +x "$TEST_ROOT/bin/docker" "$TEST_ROOT/bin/devcontainer"
@@ -345,7 +352,10 @@ mkdir -p "$lock_dir"
 sleep 30 &
 live_pid=$!
 printf '%s\n' "$live_pid" >"$lock_dir/pid"
-"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
+if RUNTIME_POOL_LOCK_RETRIES=2 "$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup 2>/dev/null; then
+  printf 'error: slots.sh cleanup proceeded while live pool.lock was held\n' >&2
+  exit 1
+fi
 [[ -d "$lock_dir" ]]
 kill "$live_pid" 2>/dev/null || true
 wait "$live_pid" 2>/dev/null || true
@@ -402,5 +412,70 @@ if "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-3 --slot 4 2>/dev
   exit 1
 fi
 jq -e '.runtime.status == "running" and .runtime.poolSlot == 3 and .runtime.containerId != null' "$feat3_meta" >/dev/null
+
+# Regression 11: Concurrent start.sh and slots.sh cleanup serialize so new container is not deleted as orphan
+DEVCONTAINER_DELAY=0.4 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
+start_pid=$!
+sleep 0.1
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup >/dev/null
+wait "$start_pid"
+feat4_meta="$TEST_ROOT/workspaces/fixture/FEAT-4/meta.json"
+feat4_cid="$(jq -r '.runtime.containerId' "$feat4_meta")"
+[[ -n "$feat4_cid" && -f "$DOCKER_STATE_DIR/$feat4_cid.running" ]]
+
+# Regression 12: Concurrent start.sh and worktrees.sh cleanup --inactive serialize on pool.lock
+"$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-4 >/dev/null
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release fixture FEAT-4 >/dev/null
+DEVCONTAINER_DELAY=0.4 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
+start_pid=$!
+sleep 0.1
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup --inactive >/dev/null 2>&1
+wait "$start_pid"
+[[ -d "$TEST_ROOT/worktrees/fixture-feat-4" ]]
+jq -e '.runtime.status == "running" and .runtime.worktree == "worktrees/fixture-feat-4"' "$feat4_meta" >/dev/null
+
+# Regression 13: Failed git status is classified as error and refused by destructive cleanup/release
+git -C "$TEST_ROOT/repos/fixture" worktree add -q -b feat/corrupt-orphan \
+  "$TEST_ROOT/worktrees/corrupt-orphan" origin/main
+printf 'corrupt' >"$TEST_ROOT/repos/fixture/.git/worktrees/corrupt-orphan/index"
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+[[ -d "$TEST_ROOT/worktrees/corrupt-orphan" ]]
+rm -f "$TEST_ROOT/repos/fixture/.git/worktrees/corrupt-orphan/index"
+git -C "$TEST_ROOT/worktrees/corrupt-orphan" reset -q HEAD -- .
+"$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup >/dev/null 2>&1
+[[ ! -e "$TEST_ROOT/worktrees/corrupt-orphan" ]]
+
+# Regression 14: Failed container recreation persists worktree-ready and null containerId after old container removal
+old_feat3_cid="$(jq -r '.runtime.containerId' "$feat3_meta")"
+if DEVCONTAINER_FAIL=1 "$TEST_ROOT/platform/runtime/scripts/slots.sh" recreate 3 2>/dev/null; then
+  printf 'error: slots.sh recreate succeeded when devcontainer up failed\n' >&2
+  exit 1
+fi
+[[ ! -e "$DOCKER_STATE_DIR/$old_feat3_cid" ]]
+jq -e '
+  .runtime.status == "worktree-ready" and
+  .runtime.containerId == null and
+  .runtime.poolSlot == 3
+' "$feat3_meta" >/dev/null
+"$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-3 >/dev/null
+
+# Regression 15: .git pointer outside configured repository inventory is rejected by repair and cleanup
+git init -q --initial-branch=main "$TEST_ROOT/external-repo"
+printf 'ext\n' >"$TEST_ROOT/external-repo/README.md"
+git -C "$TEST_ROOT/external-repo" add README.md
+git -C "$TEST_ROOT/external-repo" -c user.name=Test -c user.email=test@example.invalid commit -q -m ext
+git -C "$TEST_ROOT/external-repo" worktree add -q -b feat/ext "$TEST_ROOT/worktrees/external-wt" main
+ext_real="$(cd "$TEST_ROOT/external-repo" && pwd -P)"
+printf 'gitdir: %s/.git/worktrees/external-wt\n' "$ext_real" >"$TEST_ROOT/worktrees/external-wt/.git"
+if "$TEST_ROOT/platform/runtime/scripts/worktrees.sh" repair 2>/dev/null; then
+  printf 'error: worktrees.sh repair accepted a worktree pointing outside configured repositories\n' >&2
+  exit 1
+fi
+if "$TEST_ROOT/platform/runtime/scripts/worktrees.sh" cleanup 2>/dev/null; then
+  printf 'error: worktrees.sh cleanup accepted a worktree pointing outside configured repositories\n' >&2
+  exit 1
+fi
+[[ -d "$TEST_ROOT/worktrees/external-wt" ]]
+git -C "$TEST_ROOT/external-repo" worktree remove --force "$TEST_ROOT/worktrees/external-wt"
 
 printf 'runtime lifecycle test passed\n'

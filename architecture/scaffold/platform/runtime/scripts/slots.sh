@@ -224,6 +224,10 @@ cmd_release() {
   fi
 
   local directory workspace work_item worktree container_id pool_slot runtime_status c_status="none" project_id project repository_path
+  pool_lock="$(acquire_pool_lock)"
+  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+  export RUNTIME_POOL_LOCK_OWNER="$$"
+
   directory="$(dirname "$meta")"
   workspace="$(jq -r '.workspace' "$meta")"
   work_item="$(jq -r '.workItem' "$meta")"
@@ -250,8 +254,14 @@ cmd_release() {
 
   if [[ "$remove_worktree" -eq 1 && -n "$worktree" ]]; then
     [[ -n "$safe_wt" ]] || die "refusing to remove invalid worktree path: $worktree"
-    if [[ -e "$safe_wt" && "$(worktree_git_state "$safe_wt")" == dirty ]]; then
-      die "worktree has uncommitted changes; commit or clean it before releasing with --remove-worktree: $worktree"
+    if [[ -e "$safe_wt" ]]; then
+      local wt_state
+      wt_state="$(worktree_git_state "$safe_wt")"
+      if [[ "$wt_state" == dirty ]]; then
+        die "worktree has uncommitted changes; commit or clean it before releasing with --remove-worktree: $worktree"
+      elif [[ "$wt_state" != clean ]]; then
+        die "worktree git state is $wt_state; refusing to remove: $worktree"
+      fi
     fi
   fi
 
@@ -281,6 +291,8 @@ cmd_release() {
   update_runtime_state "$meta" "$new_status" "$new_worktree" "" "" slot-release
   "$ROOT/platform/context/scripts/snapshot.sh" "$workspace" "$work_item" create --reason slot-release >/dev/null 2>&1 || true
   record_history "$directory" "runtime slot released (pool-slot=${pool_slot:-none} container=${container_id:-none} worktree=${new_worktree:-removed})"
+  release_pool_lock "${pool_lock:-}"
+  pool_lock=""
   printf 'released slot %s from %s/%s\n' "${pool_slot:-none}" "$workspace" "$work_item"
 }
 
@@ -326,6 +338,23 @@ cmd_cleanup() {
   done
 
   local cleaned=0
+  local lock_dir="$ROOT/.local/state/runtime/pool.lock"
+  if is_pool_lock_stale "$lock_dir"; then
+    cleaned=$((cleaned + 1))
+    if [[ "$dry_run" -eq 1 ]]; then
+      printf '[dry-run] would remove stale runtime pool lock %s\n' "$lock_dir"
+    else
+      release_pool_lock "$lock_dir"
+      printf 'removed stale runtime pool lock\n'
+    fi
+  fi
+
+  if [[ "$dry_run" -eq 0 || ! -d "$lock_dir" ]]; then
+    pool_lock="$(acquire_pool_lock)"
+    trap 'release_pool_lock "${pool_lock:-}"' EXIT
+    export RUNTIME_POOL_LOCK_OWNER="$$"
+  fi
+
   local meta
   local active_containers=()
 
@@ -412,16 +441,8 @@ cmd_cleanup() {
     fi
   done <<<"$label_containers"
 
-  local lock_dir="$ROOT/.local/state/runtime/pool.lock"
-  if is_pool_lock_stale "$lock_dir"; then
-    cleaned=$((cleaned + 1))
-    if [[ "$dry_run" -eq 1 ]]; then
-      printf '[dry-run] would remove stale runtime pool lock %s\n' "$lock_dir"
-    else
-      release_pool_lock "$lock_dir"
-      printf 'removed stale runtime pool lock\n'
-    fi
-  fi
+  release_pool_lock "${pool_lock:-}"
+  pool_lock=""
 
   if [[ "$cleaned" -eq 0 ]]; then
     printf 'no slot cleanup needed\n'

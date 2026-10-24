@@ -60,12 +60,11 @@ pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
 if [[ "$start_container" -eq 1 ]]; then
   require_command docker
   require_command devcontainer
-  pool_lock="$(acquire_pool_lock)"
-  trap 'release_pool_lock "${pool_lock:-}"' EXIT
-  pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
-elif [[ -n "$requested_slot" ]]; then
-  pool_lock="$(acquire_pool_lock)"
-  trap 'release_pool_lock "${pool_lock:-}"' EXIT
+fi
+pool_lock="$(acquire_pool_lock)"
+trap 'release_pool_lock "${pool_lock:-}"' EXIT
+export RUNTIME_POOL_LOCK_OWNER="$$"
+if [[ "$start_container" -eq 1 || -n "$requested_slot" ]]; then
   pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
 fi
 
@@ -84,10 +83,13 @@ fi
 
 if [[ "$start_container" -eq 1 ]]; then
   if [[ "$recreate_container" -eq 1 && -n "$container_id" ]]; then
-    if docker inspect "$container_id" >/dev/null 2>&1; then
+    c_status="$(inspect_container_status "$container_id")"
+    [[ "$c_status" != unavailable ]] || die "docker is unavailable; cannot recreate container $container_id"
+    if [[ "$c_status" != missing ]]; then
       docker rm -f "$container_id" >/dev/null
     fi
     container_id=''
+    update_runtime_state "$meta" worktree-ready "$worktree" '' "$pool_slot" runtime-start
   fi
   if [[ -n "$container_id" ]] && docker inspect "$container_id" >/dev/null 2>&1; then
     container_status="$(docker inspect -f '{{.State.Status}}' "$container_id")"

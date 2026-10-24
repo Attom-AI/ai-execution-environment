@@ -70,7 +70,19 @@ acquire_pool_lock() {
   local lock_root="$RUNTIME_ROOT/.local/state/runtime"
   local lock="$lock_root/pool.lock"
   mkdir -p "$lock_root"
-  for _ in {1..50}; do
+  if [[ -f "$lock/pid" ]]; then
+    local lock_pid
+    lock_pid="$(tr -d '[:space:]' <"$lock/pid" 2>/dev/null || true)"
+    if [[ "$lock_pid" =~ ^[0-9]+$ ]] && kill -0 "$lock_pid" 2>/dev/null; then
+      if [[ "$lock_pid" == "$$" || "$lock_pid" == "${PPID:-}" || "$lock_pid" == "${RUNTIME_POOL_LOCK_OWNER:-}" ]]; then
+        printf '\n'
+        return 0
+      fi
+    fi
+  fi
+  local retries="${RUNTIME_POOL_LOCK_RETRIES:-50}"
+  local i
+  for ((i = 1; i <= retries; i++)); do
     if mkdir "$lock" 2>/dev/null; then
       printf '%s\n' "$$" >"$lock/pid"
       printf '%s\n' "$lock"
@@ -237,7 +249,12 @@ worktree_git_state() {
     printf 'invalid\n'
     return 0
   fi
-  if [[ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]]; then
+  local status_out
+  if ! status_out="$(git -C "$path" status --porcelain 2>/dev/null)"; then
+    printf 'error\n'
+    return 0
+  fi
+  if [[ -n "$status_out" ]]; then
     printf 'dirty\n'
   else
     printf 'clean\n'
