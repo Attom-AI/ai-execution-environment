@@ -7,10 +7,15 @@ workspace-scaffolder -> issue-refinement -> solution-designer
 ```
 
 The tool-neutral definitions are under `platform/workflows/agents/`, and
-assistant skills are provided under `.codex/skills/` (for Codex) and
-`.agents/skills/` (for Antigravity / `agy`). The coordinator is not a stage: it
-reads persistent state, reports the current position, and advances only when
-explicitly asked to run headlessly.
+assistant skills are provided under `.agents/skills/` (for Antigravity / `agy`),
+`.codex/skills/` (for Codex), and `.claude/skills/` (for Claude Code); the
+`SKILL.md` files must be identical across all three. Claude Code also loads
+`CLAUDE.md`, which imports `AGENTS.md`, and `.claude/settings.json`, which denies
+access to credentials and canonical checkouts and routes outbound Git and
+pull-request commands through `platform/interfaces/claude/hooks/` for approval.
+
+The coordinator is not a stage: it reads persistent state, reports the current
+position, and advances only when explicitly asked to run headlessly.
 
 Each stage has one bounded responsibility and one durable output. Refinement
 produces scope and acceptance criteria; design produces an executable plan;

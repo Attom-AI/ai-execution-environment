@@ -31,3 +31,6 @@ jobs:
 
       - name: Test setup profiles
         run: ./platform/tests/setup-profiles.sh
+
+      - name: Test Claude Code interface
+        run: ./platform/tests/claude-interface.sh

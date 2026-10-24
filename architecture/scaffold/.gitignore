@@ -8,6 +8,8 @@
 .env
 .env.*
 !**/platform/install/templates/.env.example
+.claude/settings.local.json
+CLAUDE.local.md
 .DS_Store
 .idea/
 *.swp
