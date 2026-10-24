@@ -14,8 +14,14 @@ case "$3" in merged|abandoned) ;; *) die "close reason must be merged or abandon
 
 directory="$(require_work_item "$1" "$2")"
 meta="$directory/meta.json"
-"$ROOT/platform/runtime/scripts/stop.sh" "$1" "$2"
 validate_projects
+
+lock_owner="${RUNTIME_POOL_LOCK_OWNER:-$$}"
+pool_lock="$(acquire_pool_lock)"
+unset RUNTIME_POOL_LOCK_OWNER
+trap 'release_pool_lock "${pool_lock:-}"' EXIT
+
+RUNTIME_POOL_LOCK_OWNER="$lock_owner" "$ROOT/platform/runtime/scripts/stop.sh" "$1" "$2"
 project_id="$(jq -r '.project' "$meta")"
 project="$(project_by_id "$project_id")" || die "project not found: $project_id"
 repository_path="$(jq -r '.repository.path' <<<"$project")"
@@ -23,14 +29,20 @@ worktree="$(jq -r '.runtime.worktree // empty' "$meta")"
 container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
 pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
 
-if [[ -n "$worktree" ]] && [[ -e "$ROOT/$worktree" ]] && \
-   [[ -n "$(git -C "$ROOT/$worktree" status --porcelain)" ]]; then
-  die "worktree has uncommitted changes; commit or clean it before closing: $worktree"
+if [[ -n "$worktree" ]] && [[ -e "$ROOT/$worktree" ]]; then
+  wt_state="$(worktree_git_state "$ROOT/$worktree")"
+  if [[ "$wt_state" == dirty ]]; then
+    die "worktree has uncommitted changes; commit or clean it before closing: $worktree"
+  elif [[ "$wt_state" != clean ]]; then
+    die "worktree git state is $wt_state; refusing to close: $worktree"
+  fi
 fi
-if [[ -n "$container_id" ]] && command -v docker >/dev/null 2>&1 && docker inspect "$container_id" >/dev/null 2>&1; then
-  docker rm -f "$container_id" >/dev/null
-elif [[ -n "$container_id" ]] && ! command -v docker >/dev/null 2>&1; then
-  die "docker is required to remove runtime container $container_id"
+if [[ -n "$container_id" ]]; then
+  c_status="$(inspect_container_status "$container_id")"
+  [[ "$c_status" != unavailable ]] || die "docker is required to remove runtime container $container_id"
+  if [[ "$c_status" != missing ]]; then
+    docker rm -f "$container_id" >/dev/null
+  fi
 fi
 if [[ -n "$worktree" ]] && [[ -e "$ROOT/$worktree" ]]; then
   git -C "$ROOT/$repository_path" worktree remove "$ROOT/$worktree"
@@ -73,4 +85,6 @@ None.
 ## Files in flight
 - None.
 EOF
+release_pool_lock "${pool_lock:-}"
+pool_lock=""
 printf 'closed %s/%s (%s)\n' "$1" "$2" "$3"

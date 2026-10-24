@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 source "$ROOT/platform/runtime/scripts/lib.sh"
 
 usage() {
-  printf 'usage: %s <workspace-id> <work-item-id> [--start-point <ref>] [--no-container]\n' "$0" >&2
+  printf 'usage: %s <workspace-id> <work-item-id> [--start-point <ref>] [--slot <slot>] [--no-container] [--recreate-container]\n' "$0" >&2
 }
 
 [[ "$#" -ge 2 ]] || { usage; exit 2; }
@@ -15,11 +15,15 @@ workspace="$1"
 work_item="$2"
 shift 2
 start_point=''
+requested_slot=''
 start_container=1
+recreate_container=0
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --start-point) start_point="${2:-}"; shift 2 ;;
+    --slot) requested_slot="${2:-}"; shift 2 ;;
     --no-container) start_container=0; shift ;;
+    --recreate-container) recreate_container=1; shift ;;
     *) usage; exit 2 ;;
   esac
 done
@@ -50,6 +54,24 @@ worktree="worktrees/${worktree_id%-}"
 target="$ROOT/$worktree"
 target_real="$(cd "$(dirname "$target")" && pwd -P)/$(basename "$target")"
 
+if [[ "$start_container" -eq 1 ]]; then
+  require_command docker
+  require_command devcontainer
+fi
+pool_lock="$(acquire_pool_lock)"
+unset RUNTIME_POOL_LOCK_OWNER
+trap 'release_pool_lock "${pool_lock:-}"' EXIT
+
+[[ "$(jq -r '.lifecycleStage' "$meta")" != closed ]] || die "work item is closed: $workspace/$work_item"
+branch="$(jq -r '.design.branch // empty' "$meta")"
+[[ -n "$branch" ]] || die "work item has no design branch: $workspace/$work_item"
+container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
+pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
+
+if [[ "$start_container" -eq 1 || -n "$requested_slot" ]]; then
+  pool_slot="$(claim_pool_slot "$meta" "$requested_slot")"
+fi
+
 if git -C "$repository" worktree list --porcelain | grep -Fxq "worktree $target_real"; then
   printf 'reusing worktree %s\n' "$worktree" >&2
   if [[ "$(sed -n 's/^gitdir: //p' "$target/.git")" == /* ]]; then
@@ -63,22 +85,30 @@ else
   git -C "$repository" worktree add --relative-paths --no-track -b "$branch" "$target" "$start_point"
 fi
 
-container_id="$(jq -r '.runtime.containerId // empty' "$meta")"
-pool_slot="$(jq -r '.runtime.poolSlot // empty' "$meta")"
-update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" "$pool_slot" runtime-start
-
 if [[ "$start_container" -eq 1 ]]; then
-  require_command docker
-  require_command devcontainer
-  pool_lock="$(acquire_pool_lock)"
-  trap 'rmdir "$pool_lock" 2>/dev/null || true' EXIT
-  pool_slot="$(claim_pool_slot "$meta")"
-  if [[ -n "$container_id" ]] && docker inspect "$container_id" >/dev/null 2>&1; then
-    container_status="$(docker inspect -f '{{.State.Status}}' "$container_id")"
-    if [[ "$container_status" != running ]]; then
+  if [[ "$recreate_container" -eq 1 && -n "$container_id" ]]; then
+    c_status="$(inspect_container_status "$container_id")"
+    [[ "$c_status" != unavailable ]] || die "docker is unavailable; cannot recreate container $container_id"
+    if [[ "$c_status" != missing ]]; then
+      docker rm -f "$container_id" >/dev/null
+    fi
+    container_id=''
+    update_runtime_state "$meta" worktree-ready "$worktree" '' "$pool_slot" runtime-start
+  fi
+  if [[ -n "$container_id" ]]; then
+    c_status="$(inspect_container_status "$container_id")"
+    [[ "$c_status" != unavailable ]] || die "docker is unavailable; cannot inspect container $container_id"
+    if [[ "$c_status" == missing ]]; then
+      container_id=''
+    fi
+  fi
+  if [[ -n "$container_id" ]]; then
+    if [[ "$c_status" != running ]]; then
+      update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" "$pool_slot" runtime-start
       docker start "$container_id" >/dev/null
     fi
   else
+    update_runtime_state "$meta" worktree-ready "$worktree" '' "$pool_slot" runtime-start
     export EXECUTION_ROOT="$ROOT"
     up_result="$(devcontainer up \
       --workspace-folder "$target" \

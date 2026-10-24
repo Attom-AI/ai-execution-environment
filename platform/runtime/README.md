@@ -10,6 +10,13 @@ the container, worktree, and slot. `close.sh` removes those resources and frees
 the slot after refusing to discard uncommitted changes. `list.sh` reports pool
 slots alongside durable state and live container status.
 
+`worktrees.sh` inspects, repairs, and cleans up active, inactive, and orphaned
+worktrees across `worktrees/`, `workspaces/`, and canonical repositories (`list`,
+`inspect`, `repair`, `cleanup [--inactive] [--dry-run]`). `slots.sh` manages
+container-pool capacity and slot assignments (`status`, `resize`, `add`,
+`allocate`, `release`, `recreate`, `cleanup [--dry-run]`), including reclaiming a
+slot from an inactive work item without closing the work item.
+
 Containers reuse the common image layers. GitHub credentials are not copied
 between containers or baked into the image: the VM-local `.local/state/gh`
 directory is mounted into every runtime.
