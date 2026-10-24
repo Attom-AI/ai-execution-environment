@@ -9,7 +9,8 @@ mkdir -p \
   "$ROOT/repos" \
   "$ROOT/workspaces" \
   "$ROOT/worktrees" \
-  "$ROOT/.local/state/gh"
+  "$ROOT/.local/state/identities"
+chmod 700 "$ROOT/.local/state/identities"
 
 if [[ ! -f "$ROOT/.env" ]]; then
   cp "$INSTALL_DIR/templates/.env.example" "$ROOT/.env"

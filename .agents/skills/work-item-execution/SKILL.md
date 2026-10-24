@@ -20,10 +20,15 @@ conversation.
 4. Start or resume the dedicated runtime with
    `platform/runtime/scripts/start.sh` when project changes require a worktree.
    Never implement in the canonical checkout under `repos/`.
-5. Use `platform/context/scripts/append.sh`, `compact.sh`, and
+5. Run every Git, `gh`, `glab`, or other provider command for the work item
+   through `platform/identity/run.sh <workspace> <work-item> -- <command>`
+   (add `--issues` for issue-source commands) so the identity recorded in
+   `meta.json` is used. Never switch accounts, log in, or fall back to host
+   credentials; report an identity failure instead.
+6. Use `platform/context/scripts/append.sh`, `compact.sh`, and
    `snapshot.sh switch` to maintain the active L0/L1/L2/L3 session context
    window and switch cleanly between topic partitions.
-6. Before handing off, update `meta.json`, overwrite `session-state.md`, and
+7. Before handing off, update `meta.json`, overwrite `session-state.md`, and
    append `history.log` as required by `platform/state/README.md`.
 
 Default to one human-approved stage at a time. Drive stages headlessly only when

@@ -29,7 +29,8 @@ jq -n --arg url "$TEST_ROOT/origin.git" '{
       owner: "example",
       name: "fixture",
       url: $url,
-      path: "repos/fixture"
+      path: "repos/fixture",
+      identity: "fixture"
     },
     issues: {
       provider: "github",
@@ -38,6 +39,8 @@ jq -n --arg url "$TEST_ROOT/origin.git" '{
     }
   }]
 }' >"$TEST_ROOT/config/projects.json"
+mkdir -p "$TEST_ROOT/.local/state"
+jq -n '{version: 1, identities: {fixture: {mode: "host"}}}' >"$TEST_ROOT/.local/state/identities.json"
 
 gh() {
   jq -n '{
@@ -64,6 +67,7 @@ jq -e '
 jq -e '
   .lifecycleStage == "scaffolded" and
   .design.branch == "feat/7-exercise-normalized-intake" and
+  .identity == {repository: "fixture", issues: "fixture"} and
   .resume.nextAgent == "issue-refinement"
 ' "$item/meta.json" >/dev/null
 

@@ -4,6 +4,7 @@
   "workItem": "",
   "project": "",
   "source": {},
+  "identity": { "repository": null, "issues": null },
   "lifecycleStage": "scaffolded",
   "gates": {
     "definitionOfReadyMet": false,
@@ -41,6 +42,7 @@
     "status": "stopped",
     "worktree": null,
     "containerId": null,
-    "poolSlot": null
+    "poolSlot": null,
+    "identity": null
   }
 }

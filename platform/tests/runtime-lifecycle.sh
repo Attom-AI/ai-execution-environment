@@ -78,6 +78,7 @@ counter=0
 counter=$((counter + 1))
 printf '%s\n' "$counter" >"$state/counter"
 id="container-$counter"
+printf '%s\n' "$@" >"$state/$id.args"
 touch "$state/$id" "$state/$id.running"
 if [[ -n "${DEVCONTAINER_DELAY:-}" ]]; then
   sleep "$DEVCONTAINER_DELAY"
@@ -110,7 +111,8 @@ jq -n --arg url "$TEST_ROOT/origin.git" '{
       owner: "example",
       name: "fixture",
       url: $url,
-      path: "repos/fixture"
+      path: "repos/fixture",
+      identity: "fixture"
     },
     issues: {
       provider: "github",
@@ -119,6 +121,9 @@ jq -n --arg url "$TEST_ROOT/origin.git" '{
     }
   }]
 }' >"$TEST_ROOT/config/projects.json"
+mkdir -p "$TEST_ROOT/.local/state/identities/fixture/gh"
+jq -n '{version: 1, identities: {fixture: {mode: "isolated", account: "fixture-bot"}}}' \
+  >"$TEST_ROOT/.local/state/identities.json"
 
 create_item() {
   local number="$1"
@@ -162,6 +167,12 @@ git -C "$TEST_ROOT/worktrees/fixture-feat-1" restore README.md
 
 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-1
 first_container="$(jq -r '.runtime.containerId' "$TEST_ROOT/workspaces/fixture/FEAT-1/meta.json")"
+# The container receives exactly the work item's identity profile.
+grep -Fxq "type=bind,source=$TEST_ROOT/.local/state/identities/fixture,target=/home/vscode/.identity" \
+  "$DOCKER_STATE_DIR/$first_container.args"
+grep -Fxq 'GH_CONFIG_DIR=/home/vscode/.identity/gh' "$DOCKER_STATE_DIR/$first_container.args"
+[[ "$(grep -c -- '^--mount$' "$DOCKER_STATE_DIR/$first_container.args")" -eq 1 ]]
+[[ "$(jq -r '.runtime.identity' "$TEST_ROOT/workspaces/fixture/FEAT-1/meta.json")" == fixture ]]
 [[ "$(jq -r '.runtime.poolSlot' "$TEST_ROOT/workspaces/fixture/FEAT-1/meta.json")" == 1 ]]
 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-1
 [[ "$(jq -r '.runtime.containerId' "$TEST_ROOT/workspaces/fixture/FEAT-1/meta.json")" == "$first_container" ]]

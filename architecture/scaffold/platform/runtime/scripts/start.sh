@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 # shellcheck source=platform/runtime/scripts/lib.sh
 source "$ROOT/platform/runtime/scripts/lib.sh"
+# shellcheck source=platform/identity/lib.sh
+source "$ROOT/platform/identity/lib.sh"
 
 usage() {
   printf 'usage: %s <workspace-id> <work-item-id> [--start-point <ref>] [--slot <slot>] [--no-container] [--recreate-container]\n' "$0" >&2
@@ -39,6 +41,7 @@ repository_path="$(jq -r '.repository.path' <<<"$project")"
 provider="$(jq -r '.repository.provider' <<<"$project")"
 repository="$ROOT/$repository_path"
 provider_script "$provider" >/dev/null
+identity="$(work_item_identity "$workspace" "$work_item" repository)"
 
 if [[ -z "$start_point" ]]; then
   default_branch="$("$ROOT/platform/repositories/ensure.sh" "$project_id")"
@@ -103,14 +106,22 @@ if [[ "$start_container" -eq 1 ]]; then
     fi
   fi
   if [[ -n "$container_id" ]]; then
+    container_identity="$(jq -r '.runtime.identity // empty' "$meta")"
+    [[ -z "$container_identity" || "$container_identity" == "$identity" ]] \
+      || die "container $container_id was created with identity $container_identity; recreate it (--recreate-container or slots.sh recreate) to use $identity"
     if [[ "$c_status" != running ]]; then
       update_runtime_state "$meta" worktree-ready "$worktree" "$container_id" "$pool_slot" runtime-start
       docker start "$container_id" >/dev/null
     fi
   else
     update_runtime_state "$meta" worktree-ready "$worktree" '' "$pool_slot" runtime-start
-    export EXECUTION_ROOT="$ROOT"
+    identity_args=()
+    identity_arg_lines="$(identity_container_args "$identity")"
+    while IFS= read -r identity_arg; do
+      [[ -z "$identity_arg" ]] || identity_args+=("$identity_arg")
+    done <<<"$identity_arg_lines"
     up_result="$(devcontainer up \
+      ${identity_args[@]+"${identity_args[@]}"} \
       --workspace-folder "$target" \
       --mount-git-worktree-common-dir \
       --config "$ROOT/platform/runtime/.devcontainer/devcontainer.json" \
@@ -124,5 +135,9 @@ else
 fi
 
 update_runtime_state "$meta" "$runtime_status" "$worktree" "$container_id" "$pool_slot" runtime-start
-record_history "$directory" "runtime started (worktree=$worktree container=${container_id:-none} pool-slot=${pool_slot:-none})"
+if [[ -n "$container_id" ]]; then
+  jq --arg identity "$identity" '.runtime.identity = $identity' "$meta" >"${meta}.tmp"
+  mv "${meta}.tmp" "$meta"
+fi
+record_history "$directory" "runtime started (worktree=$worktree container=${container_id:-none} pool-slot=${pool_slot:-none} identity=$identity)"
 printf 'started %s/%s at %s\n' "$workspace" "$work_item" "$target"

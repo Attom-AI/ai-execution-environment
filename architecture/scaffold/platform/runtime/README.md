@@ -17,6 +17,7 @@ container-pool capacity and slot assignments (`status`, `resize`, `add`,
 `allocate`, `release`, `recreate`, `cleanup [--dry-run]`), including reclaiming a
 slot from an inactive work item without closing the work item.
 
-Containers reuse the common image layers. GitHub credentials are not copied
-between containers or baked into the image: the VM-local `.local/state/gh`
-directory is mounted into every runtime.
+Containers reuse the common image layers. Credentials are not copied between
+containers or baked into the image: each container mounts only its work item's
+isolated identity profile from `.local/state/identities/<id>/`; see
+`platform/identity/`.
