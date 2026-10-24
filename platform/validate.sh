@@ -10,6 +10,7 @@ validate_projects
 
 required_paths=(
   .agents/skills/work-item-execution/SKILL.md
+  .claude/agents/ticket-coordinator.md
   .claude/settings.json
   .claude/skills/work-item-execution/SKILL.md
   .codex/skills/work-item-execution/SKILL.md
@@ -18,7 +19,9 @@ required_paths=(
   platform/context/templates/manifest.json
   platform/install/setup.sh
   platform/install/templates/.env.example
+  platform/interfaces/claude/generate-agents.sh
   platform/interfaces/claude/hooks/guard-outbound.sh
+  platform/interfaces/claude/hooks/restrict-writes.sh
   platform/repositories/providers/github.sh
   platform/runtime/.devcontainer/devcontainer.json
   platform/state/templates/meta.json
@@ -58,6 +61,8 @@ for skill in "$ROOT"/.agents/skills/*/SKILL.md; do
       || die "interface skill differs from .agents: $interface_dir/skills/$skill_name/SKILL.md"
   done
 done
+
+"$ROOT/platform/interfaces/claude/generate-agents.sh" --check
 
 if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tracked_materialized="$(git -C "$ROOT" ls-files \

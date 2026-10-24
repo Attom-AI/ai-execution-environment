@@ -13,6 +13,11 @@ assistant skills are provided under `.agents/skills/` (for Antigravity / `agy`),
 `CLAUDE.md`, which imports `AGENTS.md`, and `.claude/settings.json`, which denies
 access to credentials and canonical checkouts and routes outbound Git and
 pull-request commands through `platform/interfaces/claude/hooks/` for approval.
+Each stage is also exposed as a generated Claude Code subagent in
+`.claude/agents/`. These are thin wrappers that point to the stage definition,
+with a tool allowlist and a hook limiting file edits to the roots that stage
+owns. `claude --agent ticket-coordinator` runs the coordinator as the main
+session, delegating to the stage subagents.
 
 The coordinator is not a stage: it reads persistent state, reports the current
 position, and advances only when explicitly asked to run headlessly.

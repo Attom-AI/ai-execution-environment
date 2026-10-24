@@ -17,7 +17,8 @@
 - id: claude-code-interface
   status: in-progress
   progress:
-    - Phase 1 (interactive parity) completed in 01be556; Phases 2 and 3 and remaining platform wiring are open.
+    - Phase 1 (interactive parity) completed in 01be556.
+    - Phase 2 (stage subagents) completed; Phase 3 and remaining platform wiring are open.
   summary: Add native Claude Code support as a first-class interface alongside Codex and Antigravity, using thin adapters over the tool-neutral workflow definitions.
   decisions:
     - Choose the skill source of truth (recommended: .agents/skills/ canonical, synced into .codex/ and .claude/).
@@ -30,9 +31,9 @@
     - Add a PreToolUse hook that requires approval for git push, git clone, and pull-request creation.
     - Ignore .claude/settings.local.json and CLAUDE.local.md in .gitignore.
     - Name ~/.claude/CLAUDE.md as the operator-wide rules location in AGENTS.md.
-    # Phase 2: stage subagents
+    # Phase 2: stage subagents (done)
     - Generate .claude/agents/<stage>.md wrappers from platform/workflows/agents/ with a generator script; wrappers reference the stage file and never duplicate it.
-    - Restrict read-only stages (issue-refinement, solution-designer, code-reviewer) to tools without Edit or Write.
+    - Restrict non-code stages (issue-refinement, solution-designer, code-reviewer) to editing work-item records only, through a subagent-scoped write hook; they still need Edit and Write for artifacts and state.
     - Fail validation when generated wrappers are stale.
     # Phase 3: runtime and credentials
     - Add the pinned Claude Code devcontainer feature and update devcontainer-lock.json.
