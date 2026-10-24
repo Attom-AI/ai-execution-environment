@@ -18,7 +18,7 @@
   status: in-progress
   progress:
     - Phase 1 (interactive parity) completed in 01be556.
-    - Phase 2 (stage subagents) completed; Phase 3 and remaining platform wiring are open.
+    - Phase 2 (stage subagents) completed in b8ed9fa; Phase 3 and remaining platform wiring are open.
   summary: Add native Claude Code support as a first-class interface alongside Codex and Antigravity, using thin adapters over the tool-neutral workflow definitions.
   decisions:
     - Choose the skill source of truth (recommended: .agents/skills/ canonical, synced into .codex/ and .claude/).
@@ -49,3 +49,21 @@
     - Add an --interface claude case to platform/tests/setup-profiles.sh.
   related:
     - orchestration-engine
+
+- id: host-credential-scoping
+  status: open
+  summary: Make host-side Git and gh operations use the platform credential store (GH_CONFIG_DIR in .env) instead of the operator's global account or keychain.
+  context: >-
+    .env sets GH_CONFIG_DIR=.local/state/gh and runtime containers use it, but no host script reads it.
+    Host-side issue intake, doctor checks, and pushes therefore use whichever global gh account is active;
+    a push of dev failed as "Repository not found" until it was re-run with the platform credential scoped to that command.
+  steps:
+    - Add a shared platform helper that reads GH_CONFIG_DIR from .env, resolves it relative to the workspace root, and exports it; fail visibly when it is configured but missing.
+    - Use the helper in workspace-scaffolder (scaffold.sh, sources/github.sh) and the repository provider adapters.
+    - Scope Git credentials per invocation in the GitHub provider adapter (reset credential.helper and use gh auth git-credential) so the keychain and global gh login are never consulted.
+    - Expose the platform credential to Claude Code sessions, e.g. a SessionStart hook that exports GH_CONFIG_DIR through CLAUDE_ENV_FILE, without reading the credential files.
+    - Make doctor.sh and setup.sh report the platform account and the global account, warn on mismatch, and never switch accounts automatically.
+    - Add tests with a fixture credential directory that verify resolution and that global helpers are bypassed.
+    - Document the host credential model in architecture/setup-guide.md and install-and-portability.md.
+  related:
+    - claude-code-interface
