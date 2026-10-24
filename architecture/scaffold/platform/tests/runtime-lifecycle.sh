@@ -544,4 +544,53 @@ wait "$cleanup1_pid" "$cleanup2_pid"
 reclaim_count="$(grep -Fc 'removed stale runtime pool lock' "$TEST_ROOT/cleanup-1.out" "$TEST_ROOT/cleanup-2.out" | awk -F: '{s+=$2} END {print s+0}')"
 [[ "$reclaim_count" -eq 1 ]]
 
+# Regression 19: Abandoned pool.lock.reclaim guard is recovered during stale pool.lock reclamation
+mkdir -p "$lock_dir" "${lock_dir}.reclaim"
+printf '999999\n' >"$lock_dir/pid"
+printf '999998\n' >"${lock_dir}.reclaim/pid"
+reclaim_out="$("$TEST_ROOT/platform/runtime/scripts/slots.sh" cleanup)"
+grep -Fq 'removed stale runtime pool lock' <<<"$reclaim_out"
+[[ ! -d "$lock_dir" && ! -d "${lock_dir}.reclaim" ]]
+
+# Regression 20: Concurrent start.sh vs stop.sh and start.sh vs close.sh serialize on pool.lock
+"$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-4 >/dev/null
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release fixture FEAT-4 --remove-worktree >/dev/null
+prev_counter="$(<"$DOCKER_STATE_DIR/counter")"
+DEVCONTAINER_DELAY=0.5 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
+start_pid=$!
+for _ in $(seq 1 40); do
+  if [[ "$(<"$DOCKER_STATE_DIR/counter")" -gt "$prev_counter" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]; then
+    break
+  fi
+  sleep 0.05
+done
+[[ "$(<"$DOCKER_STATE_DIR/counter")" -gt "$prev_counter" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]
+"$TEST_ROOT/platform/runtime/scripts/stop.sh" fixture FEAT-4 >/dev/null
+wait "$start_pid"
+feat4_cid="$(jq -r '.runtime.containerId' "$feat4_meta")"
+[[ -n "$feat4_cid" && -f "$DOCKER_STATE_DIR/$feat4_cid" && ! -f "$DOCKER_STATE_DIR/$feat4_cid.running" ]]
+jq -e '.runtime.status == "stopped" and .runtime.containerId != null' "$feat4_meta" >/dev/null
+
+"$TEST_ROOT/platform/runtime/scripts/slots.sh" release fixture FEAT-4 --remove-worktree >/dev/null
+prev_counter="$(<"$DOCKER_STATE_DIR/counter")"
+DEVCONTAINER_DELAY=0.5 "$TEST_ROOT/platform/runtime/scripts/start.sh" fixture FEAT-4 >/dev/null &
+start_pid=$!
+for _ in $(seq 1 40); do
+  if [[ "$(<"$DOCKER_STATE_DIR/counter")" -gt "$prev_counter" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]; then
+    break
+  fi
+  sleep 0.05
+done
+[[ "$(<"$DOCKER_STATE_DIR/counter")" -gt "$prev_counter" && -f "$TEST_ROOT/.local/state/runtime/pool.lock/pid" ]]
+"$TEST_ROOT/platform/runtime/scripts/close.sh" fixture FEAT-4 abandoned >/dev/null
+wait "$start_pid"
+[[ ! -e "$TEST_ROOT/worktrees/fixture-feat-4" ]]
+jq -e '
+  .lifecycleStage == "closed" and
+  .runtime.status == "stopped" and
+  .runtime.worktree == null and
+  .runtime.containerId == null and
+  .runtime.poolSlot == null
+' "$feat4_meta" >/dev/null
+
 printf 'runtime lifecycle test passed\n'

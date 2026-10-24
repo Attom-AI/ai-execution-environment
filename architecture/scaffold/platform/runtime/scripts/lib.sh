@@ -135,18 +135,28 @@ reclaim_stale_pool_lock() {
   local i
   for ((i = 1; i <= 50; i++)); do
     if mkdir "$reclaim_lock" 2>/dev/null; then
+      printf '%s\n' "$$" >"$reclaim_lock/pid"
       if is_pool_lock_stale "$lock"; then
         local claimed="${lock}.stale.$$"
         rm -rf "$claimed" 2>/dev/null || true
         if mv "$lock" "$claimed" 2>/dev/null; then
           rm -f "$claimed/pid" 2>/dev/null || true
           rmdir "$claimed" 2>/dev/null || true
-          rmdir "$reclaim_lock" 2>/dev/null || true
+          release_pool_lock "$reclaim_lock" "$$"
           return 0
         fi
       fi
-      rmdir "$reclaim_lock" 2>/dev/null || true
+      release_pool_lock "$reclaim_lock" "$$"
       return 1
+    fi
+    if is_pool_lock_stale "$reclaim_lock"; then
+      local stale_reclaim="${reclaim_lock}.stale.$$"
+      rm -rf "$stale_reclaim" 2>/dev/null || true
+      if mv "$reclaim_lock" "$stale_reclaim" 2>/dev/null; then
+        rm -f "$stale_reclaim/pid" 2>/dev/null || true
+        rmdir "$stale_reclaim" 2>/dev/null || true
+      fi
+      continue
     fi
     sleep 0.05
   done
