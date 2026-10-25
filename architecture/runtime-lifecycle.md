@@ -39,6 +39,11 @@ item without closing the ticket. `worktrees`
 orphaned worktrees, inspects link health, repairs relative Git paths, and prunes
 orphaned or clean inactive worktrees (`--dry-run` supported).
 
+The runtime CLI (`platform/runtime/runtime.sh` or `bin/aee runtime`) provides a
+unified command surface dispatching to `start`, `stop`, `close`, `list`, `slots`,
+and `worktrees`. Top-level aliases like `bin/aee slots` and `bin/aee worktrees`
+are also available.
+
 The containers reuse the same built image rather than being copied from one
 another. Credentials are never baked into an image or shared between
 containers: each container mounts only its work item's isolated identity

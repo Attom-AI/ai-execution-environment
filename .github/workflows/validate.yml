@@ -23,6 +23,9 @@ jobs:
       - name: Validate scaffold
         run: ./platform/validate.sh
 
+      - name: Test runtime CLI
+        run: ./platform/tests/runtime-cli.sh
+
       - name: Test runtime lifecycle
         run: ./platform/tests/runtime-lifecycle.sh
 
