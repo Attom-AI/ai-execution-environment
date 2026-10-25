@@ -15,7 +15,9 @@ if [[ -f "$IDENTITIES_FILE" ]]; then
     .projects[]
     | . as $project
     | [.repository.identity, .issues.identity][]
-    | select(. != null and ($identities[0].identities | has(.) | not))
+    | select(. != null)
+    | . as $id
+    | select($identities[0].identities | has($id) | not)
     | "\($project.id): \(.)"' "$PROJECTS_MANIFEST")"
   [[ -z "$unresolved" ]] || die "projects reference unknown identity profiles:
 $unresolved"
@@ -27,7 +29,9 @@ required_paths=(
   .claude/settings.json
   .claude/skills/work-item-execution/SKILL.md
   .codex/skills/work-item-execution/SKILL.md
+  bin/aee
   CLAUDE.md
+  platform/cli.sh
   platform/context/scripts/init.sh
   platform/context/templates/manifest.json
   platform/install/setup.sh
@@ -40,6 +44,8 @@ required_paths=(
   platform/interfaces/claude/hooks/restrict-writes.sh
   platform/repositories/providers/github.sh
   platform/runtime/.devcontainer/devcontainer.json
+  platform/runtime/runtime.sh
+  platform/runtime/scripts/runtime.sh
   platform/runtime/scripts/slots.sh
   platform/runtime/scripts/worktrees.sh
   platform/state/templates/meta.json
@@ -128,7 +134,7 @@ if [[ -d "$ROOT/architecture/scaffold" ]]; then
   jq -e '.version == 1 and .projects == []' \
     "$ROOT/architecture/scaffold/config/projects.json" >/dev/null \
     || die "portable scaffold must contain an empty project inventory"
-  portable_paths=(.agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md backlog documentation platform)
+  portable_paths=(.agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md backlog bin documentation platform)
   for portable_path in "${portable_paths[@]}"; do
     diff -qr "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
       || die "portable scaffold is stale: $portable_path"

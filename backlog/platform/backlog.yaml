@@ -58,7 +58,11 @@
     - claude-code-interface
 
 - id: runtime-cli
-  status: open
+  status: in-progress
+  progress:
+    - Added top-level platform dispatcher CLI platform/cli.sh and bin/aee covering runtime, slots, worktrees, repos, work-items, identity, context, setup, doctor, and validate.
+    - Added dedicated runtime CLI entrypoints platform/runtime/runtime.sh and platform/runtime/scripts/runtime.sh.
+    - Added CLI test suite in platform/tests/runtime-cli.sh and updated validation and sync scaffold.
   summary: Provide a unified platform and runtime CLI that drives setup, worktree and slot operations, work-item execution, and LLM model/provider configuration.
   context: >-
     Operators and agents currently invoke individual shell scripts under platform/install/, platform/repositories/,

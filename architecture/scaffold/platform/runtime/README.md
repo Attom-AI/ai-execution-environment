@@ -4,6 +4,10 @@ One shared devcontainer definition builds every runtime, but containers are not
 shared between worktrees. The pool admits five exclusive worktree/container
 assignments by default; set `RUNTIME_POOL_SIZE` to change the capacity.
 
+`runtime.sh` (or `scripts/runtime.sh`, also exposed via `bin/aee runtime`) provides
+a unified CLI entrypoint for runtime lifecycle operations (`start`, `stop`, `close`,
+`list`, `slots`, and `worktrees`).
+
 `start.sh` creates or reuses a flat worktree, claims a pool slot, and creates or
 resumes that worktree's container. `stop.sh` stops the container while retaining
 the container, worktree, and slot. `close.sh` removes those resources and frees
