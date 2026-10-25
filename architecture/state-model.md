@@ -15,7 +15,8 @@ The global layer contains `meta.json`, `session-state.md`, and `history.log`.
 state updates are deterministic without introducing a YAML writer. Its schema
 tracks identity, lifecycle stage, gates, bounded loops, branch and PR
 references, CI/review status, resume target, blocking and closure state, and
-runtime pointers.
+runtime pointers. `identity.repository` and `identity.issues` record the
+identity profiles the work item runs under (see `identity-model.md`).
 
 `session-state.md` is overwritten at each transition and always contains
 status, next action, open questions, key decisions, and files in flight.

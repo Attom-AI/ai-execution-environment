@@ -15,8 +15,11 @@ application monorepo.
   different trust domain than the one selected by the workspace operator.
 - Do not clone, fetch, push, publish, deploy, or authenticate unless the user
   requests it or the command is the explicit subject of the task.
-- Do not store credentials in tracked files. Use VM-local credential storage or
-  the relevant authenticated CLI.
+- Do not store credentials in tracked files. Keep them in host-local identity
+  profiles under `.local/state/identities/`.
+- Run Git and provider commands for a project or work item under its identity
+  with `platform/identity/run.sh`. Never switch accounts, log in, or fall back to
+  host credentials on an identity's behalf.
 
 ## Working conventions
 

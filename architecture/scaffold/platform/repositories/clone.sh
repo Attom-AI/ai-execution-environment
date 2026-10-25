@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# shellcheck source=platform/repositories/lib.sh
-source "$ROOT/platform/repositories/lib.sh"
+# shellcheck source=platform/identity/lib.sh
+source "$ROOT/platform/identity/lib.sh"
 
 require_command git
 validate_projects
@@ -23,9 +23,10 @@ while IFS=$'\t' read -r name _workspace provider url relative_path; do
     die "target exists but is not a Git repository: $relative_path"
   fi
 
-  printf 'cloning %s into %s\n' "$name" "$relative_path"
+  identity="$(project_identity "$(project_by_id "$name")" repository)"
+  printf 'cloning %s into %s (identity=%s)\n' "$name" "$relative_path" "$identity"
   mkdir -p "$(dirname "$target")"
-  "$(provider_script "$provider")" clone "$url" "$target"
+  identity_exec "$identity" "$(provider_script "$provider")" clone "$url" "$target"
 done < <(project_rows)
 
 if [[ "$count" -eq 0 ]]; then

@@ -85,6 +85,18 @@ print_plan() {
       printf '  Commands are presented for the operator; apply remains disabled.\n'
       ;;
   esac
+  printf '\nIdentity profiles:\n'
+  local identities_file="$ROOT/.local/state/identities.json"
+  if [[ -f "$identities_file" ]] && command -v jq >/dev/null 2>&1; then
+    jq -r '.identities | to_entries[] | "  \(.key)  mode=\(.value.mode)  account=\(.value.account // "-")"' "$identities_file"
+  else
+    printf '  none configured\n'
+  fi
+  printf '  isolated: only the profile under .local/state/identities/<id>/ is used;\n'
+  printf '            ~/.ssh, the SSH agent, the keychain, and global CLI logins are excluded.\n'
+  printf '  host:     host credentials are used deliberately; containers receive none.\n'
+  printf '  Create profiles with platform/identity/identity.sh init, then reference them\n'
+  printf '  from config/projects.json as repository.identity.\n'
   printf '\nNo authentication, cloning, installation, or remote changes were performed.\n'
 }
 

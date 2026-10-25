@@ -54,6 +54,7 @@ jq \
   --arg reason "$3" \
   --arg timestamp "$timestamp" \
   '.lifecycleStage = "closed"
+   | .runtime.identity = null
    | .closed.reason = $reason
    | .closed.at = $timestamp
    | .resume.nextAgent = null

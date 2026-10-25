@@ -40,6 +40,8 @@ orphaned worktrees, inspects link health, repairs relative Git paths, and prunes
 orphaned or clean inactive worktrees (`--dry-run` supported).
 
 The containers reuse the same built image rather than being copied from one
-another. GitHub CLI state remains outside the containers in `.local/state/gh`
-and is bind-mounted into each runtime, so new pool members do not require
-duplicated authentication and credentials are never committed into an image.
+another. Credentials are never baked into an image or shared between
+containers: each container mounts only its work item's isolated identity
+profile at `/home/vscode/.identity`, with the matching environment, and keeps
+that identity for its lifetime. Host-mode identities give the container no
+credentials. See `identity-model.md`.

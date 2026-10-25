@@ -35,7 +35,9 @@ validate_projects() {
       (.repository.path | split("/") | all(. != "." and . != "..")) and
       (.issues.provider | type == "string" and length > 0) and
       (.issues.owner | type == "string" and length > 0) and
-      (.issues.repository | type == "string" and length > 0)
+      (.issues.repository | type == "string" and length > 0) and
+      (.repository.identity == null or (.repository.identity | type == "string" and test("^[a-z0-9][a-z0-9-]*$"))) and
+      (.issues.identity == null or (.issues.identity | type == "string" and test("^[a-z0-9][a-z0-9-]*$")))
     )
   ' "$PROJECTS_MANIFEST" >/dev/null || die "invalid project manifest: $PROJECTS_MANIFEST"
 }

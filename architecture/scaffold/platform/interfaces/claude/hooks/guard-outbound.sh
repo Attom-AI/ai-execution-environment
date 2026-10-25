@@ -26,9 +26,14 @@ tool_name="$(jq -r '.tool_name // empty' <<<"$input" 2>/dev/null || true)"
 command_text="$(jq -r '.tool_input.command // empty' <<<"$input" 2>/dev/null || true)"
 [[ -n "$command_text" ]] || exit 0
 
+identity_note=''
+if ! grep -q 'platform/identity/run\.sh' <<<"$command_text"; then
+  identity_note='; run it through platform/identity/run.sh so the work item identity is used'
+fi
+
 # Matching is deliberately broad: a false positive only asks for approval.
 if grep -Eq '(^|[^[:alnum:]_-])git[[:space:]]([^;&|]*[[:space:]])?(push|clone)([[:space:]]|$)' <<<"$command_text"; then
-  ask "AGENTS.md: cloning and pushing require explicit operator approval"
+  ask "AGENTS.md: cloning and pushing require explicit operator approval$identity_note"
 elif grep -Eq '(^|[^[:alnum:]_-])gh[[:space:]]([^;&|]*[[:space:]])?(repo[[:space:]]+clone|pr[[:space:]]+(create|merge))([[:space:]]|$)' <<<"$command_text"; then
-  ask "AGENTS.md: cloning and pull-request publication require explicit operator approval"
+  ask "AGENTS.md: cloning and pull-request publication require explicit operator approval$identity_note"
 fi

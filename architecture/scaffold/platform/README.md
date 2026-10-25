@@ -4,6 +4,7 @@ The executable control plane:
 
 - `install/`: materialize and diagnose a local instance
 - `repositories/`: canonical repository inventory and provider adapters
+- `identity/`: named credential profiles every Git and provider command runs under
 - `workspace-scaffolder/`: normalized issue intake and work-item creation
 - `state/`: lifecycle schema and cross-stage memory protocol
 - `runtime/`: disposable worktrees and an exclusive per-worktree container pool
