@@ -44,15 +44,15 @@ application monorepo.
 
 ## Documentation and diagrams
 
-- Architectural overviews and workflow pipelines must be visualized as rich
-  Excalidraw-style wireframe SVGs under `documentation/assets/` rather than raw
-  ASCII diagrams or unstyled boxes.
-- Wireframe SVGs must adhere to the hand-drawn aesthetic: sketchy borders,
-  readable handwriting fonts with sans-serif fallbacks (`Virgil`, `Caveat`,
-  `Patrick Hand`, sans-serif), soft pastel fills, explicit flow arrows, and
-  bounded subsystem containers.
-- Existing high-density technical schematics (such as `aee-architecture.svg`)
-  are preserved alongside wireframe overviews as deep-dive blueprints.
+- Every architectural overview or workflow diagram must answer one defined
+  question and include only the relationships needed to answer it.
+- Keep diagrams accurate to the architecture contracts, legible at their
+  rendered documentation width, and accessible without externally hosted
+  fonts. Prefer restrained visual encoding over decorative detail.
+- Use labels, line styles, and color together when distinguishing persistence,
+  ownership, lifecycle, or trust boundaries. Do not rely on color alone.
+- Preserve high-density technical schematics (such as `aee-architecture.svg`)
+  as deep-dive blueprints when adding a simplified overview.
 
 ## Setup protocol
 

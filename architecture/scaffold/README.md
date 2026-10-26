@@ -8,26 +8,24 @@ An issue-driven workspace control plane and multi-agent execution platform acros
 
 ## Architecture Overview
 
-The system strictly decouples the **Control Plane** (agent orchestration, issue intake, and CLI tooling), the **Data Plane** (containerized runtimes and toolchains), the **Storage Boundaries** (repositories, persistent workspaces, and disposable worktrees), and the **Context & State Model** (durable stage checkpoints and an LSM-tree context memory engine).
+One work item is the unit of isolation. The control plane binds its upstream issue to a fetch-only canonical repository, durable workspace, disposable worktree, project identity, and one exclusive container assignment.
 
-![AI Execution Environment Architecture Wireframe](documentation/assets/aee-architecture-excalidraw.svg)
+![AI Execution Environment work-item architecture overview](documentation/assets/aee-architecture-excalidraw.svg)
 
-> *Looking for the high-density technical schematic? See [`documentation/assets/aee-architecture.svg`](documentation/assets/aee-architecture.svg).*
+Four invariants define that boundary:
 
-### System Components & Interactions
+- Canonical repositories are synchronized with fetch only; agents work in disposable worktrees.
+- Each active worktree owns one container assignment from a configurable bounded pool.
+- Only the work item's assigned identity is mounted into its container.
+- Work-item state and artifacts survive container and worktree disposal.
 
-| Architectural Domain | Responsibilities & Components |
-|---|---|
-| **Control Plane** | • **Unified CLI (`bin/aee`)**: Central command dispatcher for runtime, slots, worktrees, repos, work-items, identities, and context.<br/>• **Agent Interfaces**: Native integration with Google Antigravity (`agy`), Claude Code subagents, and Codex.<br/>• **Ticket Coordinator & Pipeline**: Deterministic stage workflow (`scaffolder` ➔ `issue-refinement` ➔ `solution-designer` ➔ `implementation` ⮂ `testing` ⮂ `code-reviewer` ➔ `pr-creator` ➔ `pr-maintainer` ➔ `close`).<br/>• **Provider Intake**: Adapters for GitHub (`gh`) and GitLab (`glab`) ticket and PR operations wrapped by credential isolation. |
-| **Data Plane**<br/>*(Execution Engine)* | • **Host / Execution VM**: Boundary containing the Docker daemon and Dev Container CLI (`@devcontainers/cli`).<br/>• **Bounded Runtime Pool**: Fixed-capacity container pool (`RUNTIME_POOL_SIZE`, default: 5 slots).<br/>• **Exclusive Container Slots**: Each active worktree claims an exclusive container; pausing preserves state, closing destroys the container and worktree.<br/>• **Credential Isolation**: Only the work item's assigned identity profile is mounted read-only into `/home/vscode/.identity`. |
-| **Storage Boundaries** | • **`repos/<project>/`**: Canonical Git clones; pristine, fetch-only synchronization, provides the common `.git` object directory.<br/>• **`workspaces/<ws>/<ticket>/`**: Durable work-item records outliving container and worktree lifecycles.<br/>• **`worktrees/<ws>-<ticket>/`**: Flat disposable checkouts branched from `origin/<default>` using relative Git administrative links.<br/>• **`.local/state/identities/<id>/`**: Host-local credentials, never committed to Git or baked into container images. |
-| **Context & State Model** | • **Pipeline Stage State**: Coarse-grained machine state (`meta.json`), narrative checkpoint (`session-state.md`), append-only audit trail (`history.log`), and deliverables (`artifacts/`).<br/>• **LSM-Tree Context Memory Engine**: Write-Ahead Log (`wal.jsonl`), L0 sliding prompt window, L1 in-session MemTable, L2 compacted SSTables (`l2-sstables/`), L3 cold archive (`l3-archive.json`), and $O(1)$ point-in-time topic snapshots (`snap-*.json`). |
+For implementation detail, see the [high-density technical schematic](documentation/assets/aee-architecture.svg), [runtime lifecycle](architecture/runtime-lifecycle.md), [identity model](architecture/identity-model.md), [context memory model](architecture/context-memory-model.md), and [pipeline contract](architecture/pipeline-and-agents.md).
 
 ---
 
 ## Core Boundaries & Persistence Model
 
-The workspace enforces three strict separation boundaries to ensure that human workflows, agent modifications, and credentials never cross-contaminate. The runtime pool concurrently isolates tasks across independent repositories (`repo-1`, `repo-2`, `repo-3`) as well as multiple distinct tasks within the same repository (`repo-1 / FEAT-42` alongside `repo-1 / CHORE-19`):
+The workspace enforces four strict separation boundaries so human workflows, agent modifications, durable state, and credentials do not cross-contaminate. The runtime pool concurrently isolates tasks across independent repositories (`repo-1`, `repo-2`, `repo-3`) as well as multiple distinct tasks within the same repository (`repo-1 / FEAT-42` alongside `repo-1 / CHORE-19`):
 
 ```text
 repos/repo-1/                                   canonical clone (pristine, fetch-only)
