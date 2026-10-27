@@ -1,6 +1,6 @@
 # Pipeline and agents
 
-![AI Execution Environment Agent Pipeline](../documentation/assets/aee-agent-pipeline.svg)
+![AI Execution Environment Agent Pipeline](../documentation/assets/aee-agent-pipeline-excalidraw.svg)
 
 The tool-neutral definitions are under `platform/workflows/agents/`, and
 assistant skills are provided under `.agents/skills/` (for Antigravity / `agy`),

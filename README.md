@@ -57,7 +57,7 @@ worktrees/team-repo-1-feat-42/                  disposable checkout (exclusive c
 
 A ticket progresses through discrete, bounded workflow stages. Each stage has a single responsibility and durable file handoffs, preventing dependence on volatile conversation memory:
 
-![AI Execution Environment Agent Pipeline](documentation/assets/aee-agent-pipeline.svg)
+![AI Execution Environment Agent Pipeline](documentation/assets/aee-agent-pipeline-excalidraw.svg)
 
 - **`workspace-scaffolder`**: Resolves issue source, initializes `meta.json`, scaffolds durable workspace directory, claims pool slot, and starts runtime worktree.
 - **`issue-refinement`**: Analyzes ticket requirements, sets acceptance criteria, and generates `artifacts/refined-issue.md`.
