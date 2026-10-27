@@ -10,7 +10,7 @@ An issue-driven workspace control plane and multi-agent execution platform acros
 
 The system strictly decouples the **Control Plane** (agent orchestration, issue intake, and CLI tooling), the **Data Plane** (containerized runtimes and toolchains), the **Storage Boundaries** (repositories, persistent workspaces, and disposable worktrees), and the **Context & State Model** (durable stage checkpoints and an LSM-tree context memory engine).
 
-![AI Execution Environment Architecture Wireframe](documentation/assets/aee-architecture-excalidraw.svg)
+![AI Execution Environment High-Level Design](documentation/assets/aee-current-hld-excalidraw.svg)
 
 > *Looking for the high-density technical schematic? See [`documentation/assets/aee-architecture.svg`](documentation/assets/aee-architecture.svg).*
 
@@ -57,7 +57,7 @@ worktrees/team-repo-1-feat-42/                  disposable checkout (exclusive c
 
 A ticket progresses through discrete, bounded workflow stages. Each stage has a single responsibility and durable file handoffs, preventing dependence on volatile conversation memory:
 
-![AI Execution Environment Agent Pipeline](documentation/assets/aee-agent-pipeline.svg)
+![AI Execution Environment Agent Pipeline](documentation/assets/aee-agent-pipeline-excalidraw.svg)
 
 - **`workspace-scaffolder`**: Resolves issue source, initializes `meta.json`, scaffolds durable workspace directory, claims pool slot, and starts runtime worktree.
 - **`issue-refinement`**: Analyzes ticket requirements, sets acceptance criteria, and generates `artifacts/refined-issue.md`.

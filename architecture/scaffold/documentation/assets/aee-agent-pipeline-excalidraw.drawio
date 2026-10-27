@@ -1,0 +1,143 @@
+<mxfile host="Electron" agent="Codex">
+  <diagram id="aee-issue-driven-pipeline" name="Issue-driven agent pipeline">
+    <mxGraphModel dx="1414" dy="850" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Comic Sans MS;fontSize=24;fontStyle=1;fontColor=#000000;spacing=0;" value="&lt;b&gt;ISSUE-DRIVEN AGENT PIPELINE&lt;/b&gt;" vertex="1">
+          <mxGeometry height="36" width="620" x="390" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Comic Sans MS;fontSize=14;fontColor=#000000;spacing=0;" value="Deterministic stages · bounded feedback loops · durable file handoffs" vertex="1">
+          <mxGeometry height="28" width="620" x="390" y="56" as="geometry" />
+        </mxCell>
+        <mxCell id="coordinator" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=14;align=center;verticalAlign=middle;arcSize=8;" value="&lt;b&gt;TICKET COORDINATOR&lt;/b&gt;&#xa;Reads persistent state · reports position · advances the next stage" vertex="1">
+          <mxGeometry height="72" width="490" x="455" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="row1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="205" width="1300" x="50" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="row1-title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Comic Sans MS;fontSize=18;fontStyle=1;fontColor=#000000;spacing=0;" value="INTAKE + DEFINITION" vertex="1">
+          <mxGeometry height="30" width="360" x="520" y="214" as="geometry" />
+        </mxCell>
+        <mxCell id="provider" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=13;align=center;verticalAlign=middle;arcSize=8;" value="&lt;b&gt;ISSUE PROVIDER&lt;/b&gt;&#xa;&#xa;GitHub / GitLab&#xa;ticket or issue" vertex="1">
+          <mxGeometry height="112" width="180" x="75" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="stage1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;1 · WORKSPACE SCAFFOLDER&lt;/b&gt;&#xa;&lt;i&gt;Normalize intake + claim capacity&lt;/i&gt;&#xa;&#xa;• resolve project and identity&#xa;• create durable workspace state&#xa;• claim slot and branch worktree&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; meta.json · slot assigned" vertex="1">
+          <mxGeometry height="142" width="310" x="285" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="stage2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;2 · ISSUE REFINEMENT&lt;/b&gt;&#xa;&lt;i&gt;Define the work clearly&lt;/i&gt;&#xa;&#xa;• scope, exclusions and risks&#xa;• verifiable acceptance criteria&#xa;• definition-of-ready gate&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; refined-issue.md" vertex="1">
+          <mxGeometry height="142" width="310" x="625" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="stage3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;3 · SOLUTION DESIGNER&lt;/b&gt;&#xa;&lt;i&gt;Produce an executable design&lt;/i&gt;&#xa;&#xa;• survey codebase and interfaces&#xa;• define file changes and test plan&#xa;• design-approval gate&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; design-plan.md" vertex="1">
+          <mxGeometry height="142" width="310" x="965" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="provider-to-stage1" edge="1" parent="1" source="provider" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="stage1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="stage1-to-stage2" edge="1" parent="1" source="stage1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="stage2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="stage2-to-stage3" edge="1" parent="1" source="stage2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="stage3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="coordinator-to-stage1" edge="1" parent="1" source="coordinator" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;dashed=1;endArrow=block;endFill=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" target="stage1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="131" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="row2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;dashed=1;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="220" width="1300" x="50" y="445" as="geometry" />
+        </mxCell>
+        <mxCell id="row2-title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Comic Sans MS;fontSize=18;fontStyle=1;fontColor=#000000;spacing=0;" value="BOUNDED EXECUTION LOOP · maximum 3 cycles" vertex="1">
+          <mxGeometry height="30" width="490" x="455" y="454" as="geometry" />
+        </mxCell>
+        <mxCell id="stage4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;4 · IMPLEMENTATION&lt;/b&gt;&#xa;&lt;i&gt;Change code in the worktree&lt;/i&gt;&#xa;&#xa;• surgical, minimal diffs&#xa;• dedicated runtime slot&#xa;• commit project changes&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; Git commits" vertex="1">
+          <mxGeometry height="142" width="330" x="110" y="495" as="geometry" />
+        </mxCell>
+        <mxCell id="stage5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;5 · TESTING&lt;/b&gt;&#xa;&lt;i&gt;Verify the implementation&lt;/i&gt;&#xa;&#xa;• unit and contract tests&#xa;• linters and platform checks&#xa;• verification pass / fail&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; test-summary.md" vertex="1">
+          <mxGeometry height="142" width="330" x="535" y="495" as="geometry" />
+        </mxCell>
+        <mxCell id="stage6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;6 · CODE REVIEWER&lt;/b&gt;&#xa;&lt;i&gt;Audit the change against intent&lt;/i&gt;&#xa;&#xa;• compare diff with acceptance criteria&#xa;• check boundaries and credential leaks&#xa;• review-approval gate&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; review-notes.md" vertex="1">
+          <mxGeometry height="142" width="330" x="960" y="495" as="geometry" />
+        </mxCell>
+        <mxCell id="human-review" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;dashed=1;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=center;verticalAlign=middle;arcSize=8;" value="&lt;b&gt;HUMAN REVIEW&lt;/b&gt;&#xa;loop limit reached" vertex="1">
+          <mxGeometry height="56" width="200" x="1125" y="675" as="geometry" />
+        </mxCell>
+        <mxCell id="stage3-to-stage4" edge="1" parent="1" source="stage3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="stage4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1120" y="430" />
+              <mxPoint x="275" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="stage4-to-stage5" edge="1" parent="1" source="stage4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=11;labelBackgroundColor=#ffffff;endArrow=block;endFill=1;" target="stage5" value="commit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="stage5-to-stage6" edge="1" parent="1" source="stage5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=11;labelBackgroundColor=#ffffff;endArrow=block;endFill=1;" target="stage6" value="verdict">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="failure-loop" edge="1" parent="1" source="stage6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;dashed=1;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=11;labelBackgroundColor=#ffffff;endArrow=block;endFill=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" value="test or review failure · increment loop counter">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1042.5" y="690" />
+              <mxPoint x="270" y="690" />
+            </Array>
+            <mxPoint x="1120" y="637" as="sourcePoint" />
+            <mxPoint x="270" y="637" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loop-to-human" edge="1" parent="1" source="stage6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;dashed=1;endArrow=block;endFill=1;exitX=0.804;exitY=0.999;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;" target="human-review">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="row3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="205" width="1300" x="50" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="row3-title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Comic Sans MS;fontSize=18;fontStyle=1;fontColor=#000000;spacing=0;" value="PUBLISH + MAINTAIN + CLOSE" vertex="1">
+          <mxGeometry height="30" width="420" x="490" y="758" as="geometry" />
+        </mxCell>
+        <mxCell id="stage7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;7 · PR CREATOR&lt;/b&gt;&#xa;&lt;i&gt;Publish under the selected identity&lt;/i&gt;&#xa;&#xa;• push through identity runner&#xa;• create structured pull request&#xa;• trigger provider CI&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; PR opened" vertex="1">
+          <mxGeometry height="142" width="330" x="110" y="795" as="geometry" />
+        </mxCell>
+        <mxCell id="stage8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;8 · PR MAINTAINER&lt;/b&gt;&#xa;&lt;i&gt;Respond to remote feedback&lt;/i&gt;&#xa;&#xa;• monitor CI and review comments&#xa;• update branch and re-run verification&#xa;• require approval and green CI&#xa;&#xa;&lt;b&gt;Handoff:&lt;/b&gt; merge-ready PR" vertex="1">
+          <mxGeometry height="142" width="330" x="535" y="795" as="geometry" />
+        </mxCell>
+        <mxCell id="stage9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=12;align=left;verticalAlign=top;spacingTop=12;spacingLeft=12;spacingRight=10;arcSize=8;" value="&lt;b&gt;9 · CLOSE&lt;/b&gt;&#xa;&lt;i&gt;Retain evidence, release capacity&lt;/i&gt;&#xa;&#xa;• confirm clean worktree state&#xa;• remove runtime and worktree&#xa;• release pool slot&#xa;&#xa;&lt;b&gt;Terminal:&lt;/b&gt; disposition recorded" vertex="1">
+          <mxGeometry height="142" width="330" x="960" y="795" as="geometry" />
+        </mxCell>
+        <mxCell id="stage6-to-stage7" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="stage7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1075" y="715.1" />
+              <mxPoint x="275" y="715.1" />
+            </Array>
+            <mxPoint x="1075" y="637" as="sourcePoint" />
+            <mxPoint x="340" y="795" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="stage7-to-stage8" edge="1" parent="1" source="stage7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="stage8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="stage8-to-stage9" edge="1" parent="1" source="stage8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="stage9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pr-feedback-loop" edge="1" parent="1" source="stage8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;strokeColor=#000000;strokeWidth=2;dashed=1;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=11;labelBackgroundColor=#ffffff;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="stage4" value="CI or review feedback">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="970" />
+              <mxPoint x="25" y="970" />
+              <mxPoint x="25" y="566" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="state" parent="1" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontFamily=Comic Sans MS;fontSize=13;align=center;verticalAlign=middle;arcSize=8;" value="&lt;b&gt;DURABLE HANDOFF CONTRACT&lt;/b&gt;&#xa;meta.json · session-state.md · history.log · artifacts/&#xa;Every stage reads and updates files; conversation history is never workflow state." vertex="1">
+          <mxGeometry height="72" width="900" x="250" y="984" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
