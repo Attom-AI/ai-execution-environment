@@ -85,6 +85,7 @@
 
 - id: shareable-sdd-platform
   status: open
+  issue: https://github.com/eiakoji-me/ai-execution-environment/issues/29
   summary: Package and publish aee as an open-source, spec-driven development platform with containerized LLM processing, multi-VCS trust isolation, and LSM-tree memory.
   context: >-
     Transforms the workspace control plane into a standalone, shareable developer tool for spec-driven
@@ -98,9 +99,14 @@
     - Formalize the workflow classification layer (spec-to-pr, runbook, investigation, documentation).
     - Containerize the LLM processor (Dockerfile with Claude, Agy, Gemini, Python SDKs and mounted session store).
     - Create quickstart onboarding documentation, architecture wireframe SVGs, and automated installation script.
+  related:
+    - containerized-llm-processor
+    - workflow-classification-layer
+    - stack-specific-runners
 
 - id: stack-specific-runners
   status: open
+  issue: https://github.com/eiakoji-me/ai-execution-environment/issues/30
   summary: Evolve runtime container pool slots into specialized, stack-specific Runners (Java, Node, Go, Python, Hugo).
   context: >-
     Currently, platform/runtime uses a single generic devcontainer definition for all worktree runtime slots.
@@ -114,5 +120,45 @@
     - Create modular runner Dockerfiles or devcontainer feature layers (runner-base, runner-node, runner-java, runner-hugo, runner-python).
     - Update platform/runtime/scripts/start.sh to resolve and boot the project's designated runner image in the allocated slot.
     - Add runner inspection subcommands to aee runtime slots.
+  related:
+    - shareable-sdd-platform
+
+- id: containerized-llm-processor
+  status: open
+  issue: https://github.com/eiakoji-me/ai-execution-environment/issues/31
+  summary: Package the cognitive agent execution layer into an isolated LLM processor container.
+  context: >-
+    Decouples LLM agents (Claude Code, Gemini CLI, Antigravity, Codex) from host machine configurations and from target
+    project execution runtimes. The LLM processor acts as a pure cognitive function receiving hydrated context memory and
+    producing structured code artifacts or diffs.
+  decisions:
+    - Maintain strict boundary between the cognitive container and target code execution containers.
+    - Mount session store (.local/state/sessions/ -> /workspace/sessions) rather than streaming long conversational transcripts.
+  steps:
+    - Create Dockerfile packaging CLI agent interfaces (Claude Code, Antigravity/Gemini CLI, Codex).
+    - Implement container runner wrapper for platform/agents/exec.sh invoking the containerized processor when configured.
+    - Support credential passthrough via temporary environment injection without writing secrets to images or disks.
+    - Verify single-turn execution against hydrated LSM-tree context.
+  related:
+    - shareable-sdd-platform
+    - orchestration-engine
+
+- id: workflow-classification-layer
+  status: open
+  issue: https://github.com/eiakoji-me/ai-execution-environment/issues/32
+  summary: Introduce an automated classification and routing layer for incoming issues and tasks.
+  context: >-
+    Not every task requires the full scaffold -> refine -> design -> plan -> execute -> review -> PR lifecycle.
+    Operational tasks (runbooks), investigation spikes, and documentation updates require tailored state transitions and gate validations.
+  decisions:
+    - Classification occurs at intake / ingest time and is recorded in meta.json under workflowType.
+    - Non-code workflows skip irrelevant gates (e.g. documentation tasks do not require runtime container slots or unit test runs).
+  steps:
+    - Implement workflow intent classifier in platform/workspace-scaffolder/classify.sh or as part of ingest.sh.
+    - Update meta.json schema to record workflowType and adjust lifecycle gates accordingly.
+    - Add execution pathways for runbook and investigation workflows.
+    - Add automated tests for workflow classification.
+  related:
+    - shareable-sdd-platform
 
 
