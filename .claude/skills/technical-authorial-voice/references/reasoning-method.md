@@ -13,6 +13,17 @@ $$\text{Foundations} \longrightarrow \text{Mechanisms} \longrightarrow \text{Abs
 
 *Note:* These trajectories represent preferred cognitive reasoning sequences, **not mandatory article headings or rigid outline templates**.
 
+### Argumentative Progression & Relational Transitions
+Arguments must develop through intelligible logical relationships rather than arbitrary lists of points or superficial topical transitions. Ensure clear causality across key conceptual boundaries:
+
+- **From Observation to Governing Principle**: Establish empirical facts or operational failure modes before inducing the underlying systemic law.
+- **From Engineering Constraint to Architectural Decision**: Ground structural choices in explicit limitations (latency budgets, failure domains, consistency models) rather than convention.
+- **From Mechanism to Resulting Properties**: Demonstrate how components causally interact to produce system properties (e.g., how fencing tokens guarantee linearizability, not merely asserting that the system is safe).
+- **From Technical Limitation to Design Trade-off**: Acknowledge what the architecture sacrifices, framing trade-offs as calculated economic or physical balances rather than flaws.
+- **From Conceptual Proposition to Practical Implementation**: Anchor high-level abstractions in concrete runtime constructs (code, data structures, state machines, protocol contracts).
+
+> **Flexibility Principle:** These relationships represent logical connections, not a rigid sequential template. The goal is unbroken continuity of thought without formulaic, repetitive paragraph structures.
+
 ---
 
 ## II. Bidirectional Reverse Reasoning (Core Method)

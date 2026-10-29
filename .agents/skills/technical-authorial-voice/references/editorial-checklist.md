@@ -29,3 +29,17 @@ Use this checklist to critique, revise, and accept technical copy, articles, wor
 - [ ] **Immediate Claim/Problem**: Opens directly with the technical thesis or tension; never starts with *"How..."*, *"This article explains..."*, or a question.
 - [ ] **No Laundry Lists**: Completely free of comma-separated pattern inventories or lists linked by gerunds.
 - [ ] **Strict Economy**: Strictly complies with length constraints (e.g., under 300 characters for site card summaries).
+
+---
+
+## 5. Diagnostic Evaluation Criteria (Reflective Review)
+Apply these diagnostic questions to test the integrity, stance, and restraint of the writing:
+
+- [ ] **Intelligible Conceptual Relationships**: Does the argument progress through logical relationships (constraint $\rightarrow$ mechanism $\rightarrow$ property $\rightarrow$ trade-off) rather than arbitrary topic jumps?
+- [ ] **Reasoning-Driven Transitions**: Are transitions motivated by the development of ideas rather than convenient section breaks or mechanical phrases?
+- [ ] **Natural & Clear Authorship**: When firsthand systems are discussed, does authorship emerge clearly and naturally within the argument without promotional posture?
+- [ ] **Claims vs. Outcomes**: Are concrete technical mechanics strictly distinguished from aspirational outcomes or future design goals?
+- [ ] **Preservation of Distinctive Voice**: Has editing preserved the author's intentional, idiosyncratic phrasing instead of substituting generic corporate/AI cadence?
+- [ ] **Context-Appropriate Expression**: Is the blend of analytical, contemplative, and expressive modes calibrated to the specific medium and audience?
+- [ ] **Avoidance of Rigid Templates**: Have inferred stylistic preferences been applied with nuance rather than formulaic imitation?
+- [ ] **Unannounced Authority**: Does the passage establish technical authority through substance and analytical precision without announcing it?

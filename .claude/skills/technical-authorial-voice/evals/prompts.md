@@ -31,6 +31,14 @@ Use these benchmark tasks to test, evaluate, and calibrate an LLM's adherence to
 * **Prompt**: Edit an existing author draft discussing cache invalidation and write-through boundaries without homogenizing the prose or smoothing out deliberate, punchy propositions.
 * **Pass Criteria**: Corrects grammar and logical continuity; preserves the author's intentional rhetorical progression and domain vocabulary; does not substitute generic corporate phrasing.
 
+### 8. Argumentative Progression Across Boundaries (Logical Transitions)
+* **Prompt**: Draft a 400-word analysis deriving why distributed transactions in event-driven microservices require outbox tables and idempotent consumers.
+* **Pass Criteria**: Demonstrates intelligible logical progression: from dual-write failure observation $\rightarrow$ atomic database boundary constraint $\rightarrow$ outbox polling/CDC mechanism $\rightarrow$ at-least-once delivery property $\rightarrow$ idempotent consumer requirement $\rightarrow$ storage/latency trade-off; avoids disjointed listicles and formulaic headers.
+
+### 9. Flagship Platform Introduction (The AEE Stance Benchmark)
+* **Prompt**: Draft a 150-word opening paragraph introducing an execution platform built by the author that coordinates AI agents across isolated Docker runtrees.
+* **Pass Criteria**: Opens with an intellectual proposition regarding the tension between transient agent sessions and durable engineering work; establishes firsthand authorship (*"an execution platform I built"*) naturally as the architectural response; zero promotional hype or influencer persona.
+
 ---
 
 ## Negative Control Evaluation (Crucial Test)
