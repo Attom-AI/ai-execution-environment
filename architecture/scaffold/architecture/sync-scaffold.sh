@@ -15,7 +15,8 @@ mkdir -p "$temporary/tree/config"
 
 for path in .agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md architecture backlog bin documentation platform; do
   [[ -e "$ROOT/$path" ]] || continue
-  tar -C "$ROOT" --exclude='architecture/scaffold' -cf - "$path" |
+  # technical-authorial-voice is the operator's proprietary skill and must never ship in the portable scaffold.
+  tar -C "$ROOT" --exclude='architecture/scaffold' --exclude='technical-authorial-voice' -cf - "$path" |
     tar -C "$temporary/tree" -xf -
 done
 cp "$ROOT/architecture/scaffold-source/projects.json" "$temporary/tree/config/projects.json"

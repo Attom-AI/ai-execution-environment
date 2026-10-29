@@ -137,9 +137,11 @@ if [[ -d "$ROOT/architecture/scaffold" ]]; then
   jq -e '.version == 1 and .projects == []' \
     "$ROOT/architecture/scaffold/config/projects.json" >/dev/null \
     || die "portable scaffold must contain an empty project inventory"
+  [[ -z "$(find "$ROOT/architecture/scaffold" -name technical-authorial-voice -print -quit)" ]] \
+    || die "portable scaffold must not contain the proprietary technical-authorial-voice skill"
   portable_paths=(.agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md backlog bin documentation platform)
   for portable_path in "${portable_paths[@]}"; do
-    diff -qr "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
+    diff -qr --exclude=technical-authorial-voice "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
       || die "portable scaffold is stale: $portable_path"
   done
   diff -qr --exclude=scaffold "$ROOT/architecture" "$ROOT/architecture/scaffold/architecture" >/dev/null \
