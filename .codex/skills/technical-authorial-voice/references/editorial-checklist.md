@@ -35,8 +35,9 @@ Use this checklist to critique, revise, and accept technical copy, articles, wor
 ## 5. Diagnostic Evaluation Criteria (Reflective Review)
 Apply these diagnostic questions to test the integrity, stance, and restraint of the writing:
 
+- [ ] **Smallest Effective Correction**: Was the intervention minimal and targeted? Did it solve the logical or transitional friction without unnecessary rewriting?
+- [ ] **Reasoning-Driven Transitions**: Are transitions motivated by causal development (explaining *why* a platform responds to a constraint) rather than convenient section breaks?
 - [ ] **Intelligible Conceptual Relationships**: Does the argument progress through logical relationships (constraint $\rightarrow$ mechanism $\rightarrow$ property $\rightarrow$ trade-off) rather than arbitrary topic jumps?
-- [ ] **Reasoning-Driven Transitions**: Are transitions motivated by the development of ideas rather than convenient section breaks or mechanical phrases?
 - [ ] **Natural & Clear Authorship**: When firsthand systems are discussed, does authorship emerge clearly and naturally within the argument without promotional posture?
 - [ ] **Claims vs. Outcomes**: Are concrete technical mechanics strictly distinguished from aspirational outcomes or future design goals?
 - [ ] **Preservation of Distinctive Voice**: Has editing preserved the author's intentional, idiosyncratic phrasing instead of substituting generic corporate/AI cadence?

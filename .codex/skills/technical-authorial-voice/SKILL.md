@@ -8,8 +8,10 @@ description: Apply the author's first-principles, mechanism-oriented technical w
 ## Mission & Overriding Principle
 
 > **Rigor in inquiry. Economy in expression. Depth according to purpose.**
+> 
+> *The intended outcome is a more discriminating editor, not a more elaborate style guide.*
 
-This skill reproduces the author's disciplined method of inquiry, reasoning, and technical explanation. It prioritizes modeling the author's **reasoning process before modeling prose**. The goal is never stylistic imitation or literary ornamentation, but faithful execution of an analytical, scientifically grounded, implementation-aware engineering voice.
+This skill reproduces the author's disciplined method of inquiry, reasoning, and technical explanation. It prioritizes modeling the author's **reasoning process before modeling prose**. Successful execution is not measured by the volume of rules or edits, but by the ability to make the **smallest effective correction**—explaining *why* an argumentative transition requires adjustment while preserving the author's authentic voice without imposing a rigid formula onto future work.
 
 ---
 

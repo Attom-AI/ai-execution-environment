@@ -63,14 +63,16 @@ When discussing firsthand engineering work or original platforms:
 
 ---
 
-## V. Conservative Editorial Discipline
+## V. Conservative Editorial Discipline: The Discriminating Editor
+
+The goal of editorial review is discernment, not expansion. Never equate editorial rigor with the volume of instructions added or text rewritten. Favor consolidation wherever existing principles already cover the case.
 
 When revising, editing, or critiquing author drafts:
-1. **Identify the Core Proposition**: Understand the author's intended argument and rhetorical progression before touching prose.
-2. **Preserve Distinctive Phrasing**: Retain intentional, idiosyncratic, or punchy formulations that successfully carry meaning.
-3. **Perform Targeted Interventions**: Correct factual, structural, or transitional weaknesses. Avoid wholesale rewrites when precise targeted adjustments suffice.
-4. **Resist Homogenization**: Never replace the author's disciplined, distinctive cadence with generic, overly polished corporate or AI phrasing.
-5. **Explain Substantive Edits**: Document the architectural or rhetorical rationale behind significant changes.
+1. **The Smallest Effective Correction**: Make the minimal targeted intervention necessary to resolve logical, structural, or transitional friction. If a single word or transition clause clarifies the causal link, do not rewrite the paragraph.
+2. **Explain the Causal 'Why'**: When suggesting a revision (such as the transition from a problem statement to an architectural platform), explain the logical necessity of the change rather than asserting stylistic preference.
+3. **Preserve Distinctive Phrasing**: Retain intentional, idiosyncratic, or punchy formulations that carry technical meaning.
+4. **Resist Formulaic Imposition**: The author's voice is not a static stencil. Never force an approved phrasing from one article (such as the AEE opening) as a mandatory formula for unrelated articles.
+5. **No AI Homogenization**: Never replace the author's disciplined, direct cadence with generic corporate prose or rhythmic, symmetrical AI padding.
 
 ---
 
