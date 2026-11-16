@@ -36,6 +36,23 @@
       }
     },
     {
+      "id": "c1-codesignal-drills",
+      "workspace": "akojimsg-c1-codesignal-drills",
+      "repository": {
+        "provider": "github",
+        "owner": "akojimsg",
+        "name": "c1-codesignal-drills",
+        "url": "https://github.com/akojimsg/c1-codesignal-drills",
+        "path": "repos/c1-codesignal-drills",
+        "identity": "eiakoji-me"
+      },
+      "issues": {
+        "provider": "github",
+        "owner": "akojimsg",
+        "repository": "c1-codesignal-drills"
+      }
+    },
+    {
       "id": "data-structures-algorithms",
       "workspace": "eiakoji-me-data-structures-algorithms",
       "repository": {
@@ -67,6 +84,23 @@
         "provider": "github",
         "owner": "eiakoji-me",
         "repository": "staff-eng-transition-masterclass"
+      }
+    },
+    {
+      "id": "system-design-practical-guide",
+      "workspace": "eiakoji-me-system-design-practical-guide",
+      "repository": {
+        "provider": "github",
+        "owner": "eiakoji-me",
+        "name": "system-design-practical-guide",
+        "url": "https://github.com/eiakoji-me/system-design-practical-guide",
+        "path": "repos/system-design-practical-guide",
+        "identity": "eiakoji-me"
+      },
+      "issues": {
+        "provider": "github",
+        "owner": "eiakoji-me",
+        "repository": "system-design-practical-guide"
       }
     },
     {
