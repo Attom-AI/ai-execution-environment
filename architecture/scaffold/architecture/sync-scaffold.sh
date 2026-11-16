@@ -19,6 +19,10 @@ for path in .agents .claude .codex .editorconfig .github .gitignore AGENTS.md CL
   tar -C "$ROOT" --exclude='architecture/scaffold' --exclude='technical-authorial-voice' -cf - "$path" |
     tar -C "$temporary/tree" -xf -
 done
+# Learning notes are the operator's personal material; the scaffold keeps only the directory's README.
+if [[ -d "$temporary/tree/documentation/learning-notes" ]]; then
+  find "$temporary/tree/documentation/learning-notes" -mindepth 1 ! -name README.md -exec rm -rf {} +
+fi
 cp "$ROOT/architecture/scaffold-source/projects.json" "$temporary/tree/config/projects.json"
 
 mkdir -p "$SCAFFOLD"

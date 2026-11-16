@@ -141,9 +141,14 @@ if [[ -d "$ROOT/architecture/scaffold" ]]; then
     || die "portable scaffold must not contain the proprietary technical-authorial-voice skill"
   portable_paths=(.agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md backlog bin documentation platform)
   for portable_path in "${portable_paths[@]}"; do
-    diff -qr --exclude=technical-authorial-voice "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
+    diff -qr --exclude=technical-authorial-voice --exclude=learning-notes "$ROOT/$portable_path" "$ROOT/architecture/scaffold/$portable_path" >/dev/null \
       || die "portable scaffold is stale: $portable_path"
   done
+  # Learning notes stay out of the scaffold; only the directory's README is portable.
+  diff -q "$ROOT/documentation/learning-notes/README.md" "$ROOT/architecture/scaffold/documentation/learning-notes/README.md" >/dev/null \
+    || die "portable scaffold is stale: documentation/learning-notes/README.md"
+  [[ "$(find "$ROOT/architecture/scaffold/documentation/learning-notes" -mindepth 1 ! -name README.md | wc -l)" -eq 0 ]] \
+    || die "portable scaffold contains learning notes"
   diff -qr --exclude=scaffold "$ROOT/architecture" "$ROOT/architecture/scaffold/architecture" >/dev/null \
     || die "portable scaffold is stale: architecture"
 fi
