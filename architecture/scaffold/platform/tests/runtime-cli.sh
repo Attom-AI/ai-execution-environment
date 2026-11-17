@@ -122,6 +122,7 @@ grep -Fq 'compdef _aee aee' <<<"$zsh_comp" || fail "missing compdef in zsh compl
 
 bash_comp="$("$AEE" completion bash)"
 grep -Fq '_aee_completions()' <<<"$bash_comp" || fail "missing _aee_completions in bash completion"
+grep -Fq 'declare -f _init_completion' <<<"$bash_comp" || fail "missing declare -f check in bash completion"
 
 # 7. Test identity subcommand dispatching
 identity_list_out="$("$AEE" identity list)"

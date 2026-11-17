@@ -267,7 +267,7 @@ generate_bash_completion() {
   cat <<'EOF'
 _aee_completions() {
   local cur prev words cword
-  if declare -F _init_completion >/dev/null 2>&1; then
+  if declare -f _init_completion >/dev/null 2>&1; then
     _init_completion || return
   else
     cur="${COMP_WORDS[COMP_CWORD]}"
