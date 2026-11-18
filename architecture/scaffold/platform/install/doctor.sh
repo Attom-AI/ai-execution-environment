@@ -14,6 +14,13 @@ for command_name in bash devcontainer docker envsubst git gh jq rg shellcheck; d
 done
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+if command -v aee >/dev/null 2>&1; then
+  aee_bin="$(command -v aee)"
+  printf 'ok      aee in PATH (%s)\n' "$aee_bin"
+else
+  printf 'info    aee not found in PATH (link with: ln -sf "%s/bin/aee" ~/.local/bin/aee)\n' "$root"
+fi
 runtime_config="$root/platform/runtime/.devcontainer/devcontainer.json"
 if command -v jq >/dev/null 2>&1 && jq -e '
   .features

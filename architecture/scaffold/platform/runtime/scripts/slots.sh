@@ -300,6 +300,10 @@ cmd_release() {
   release_pool_lock "${pool_lock:-}"
   pool_lock=""
   printf 'released slot %s from %s/%s\n' "${pool_slot:-none}" "$workspace" "$work_item"
+
+  if [[ -x "$ROOT/platform/fleet/queue.sh" ]]; then
+    "$ROOT/platform/fleet/queue.sh" pop --auto >/dev/null 2>&1 || true
+  fi
 }
 
 cmd_recreate() {

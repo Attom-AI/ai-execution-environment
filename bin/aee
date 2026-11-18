@@ -2,5 +2,66 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+find_aee_root() {
+  local curr="$PWD"
+  while [[ -n "$curr" && "$curr" != "/" ]]; do
+    if [[ -f "$curr/aee-workspace.yaml" ]]; then
+      printf '%s\n' "$curr"
+      return 0
+    fi
+    curr="${curr%/*}"
+  done
+  # Fallback to config/projects.json if aee-workspace.yaml was not found
+  curr="$PWD"
+  while [[ -n "$curr" && "$curr" != "/" ]]; do
+    if [[ -f "$curr/config/projects.json" && -f "$curr/platform/cli.sh" ]]; then
+      printf '%s\n' "$curr"
+      return 0
+    fi
+    curr="${curr%/*}"
+  done
+  return 1
+}
+
+ROOT=""
+if [[ -n "${AEE_ROOT:-}" && (-f "$AEE_ROOT/aee-workspace.yaml" || -f "$AEE_ROOT/config/projects.json") ]]; then
+  ROOT="$AEE_ROOT"
+elif ROOT="$(find_aee_root)"; then
+  : # Discovered root via upward search
+else
+  printf 'fatal: not an ai-execution-environment workspace (no aee-workspace.yaml found)\n' >&2
+  exit 1
+fi
+
+export AEE_ROOT="$ROOT"
+
+# Context inference based on $PWD relative to $ROOT
+rel="${PWD#"$ROOT"}"
+rel="${rel#/}"
+
+if [[ "$rel" =~ ^worktrees/([^/]+) ]]; then
+  wt_name="${BASH_REMATCH[1]}"
+  AEE_CURRENT_WORKTREE="worktrees/$wt_name"
+  export AEE_CURRENT_WORKTREE
+  while IFS= read -r meta; do
+    if [[ "$(jq -r '.runtime.worktree // empty' "$meta" 2>/dev/null)" == "worktrees/$wt_name" ]]; then
+      AEE_WORKSPACE="$(jq -r '.workspace' "$meta")"
+      AEE_WORK_ITEM="$(jq -r '.workItem' "$meta")"
+      AEE_PROJECT="$(jq -r '.project // empty' "$meta")"
+      export AEE_WORKSPACE AEE_WORK_ITEM AEE_PROJECT
+      break
+    fi
+  done < <(find "$ROOT/workspaces" -mindepth 3 -maxdepth 3 -name meta.json -type f 2>/dev/null || true)
+elif [[ "$rel" =~ ^workspaces/([^/]+)/([^/]+) ]]; then
+  AEE_WORKSPACE="${BASH_REMATCH[1]}"
+  AEE_WORK_ITEM="${BASH_REMATCH[2]}"
+  export AEE_WORKSPACE AEE_WORK_ITEM
+elif [[ "$rel" =~ ^repos/([^/]+) ]]; then
+  repo_name="${BASH_REMATCH[1]}"
+  if [[ -f "$ROOT/config/projects.json" ]]; then
+    AEE_PROJECT="$(jq -r --arg p "$repo_name" '.projects[] | select(.id == $p or .repository.name == $p) | .id' "$ROOT/config/projects.json" 2>/dev/null || true)"
+    export AEE_PROJECT
+  fi
+fi
+
 exec "$ROOT/platform/cli.sh" "$@"

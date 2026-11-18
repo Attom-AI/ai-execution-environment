@@ -20,20 +20,42 @@
    instance directories, seeds `.env`, validates the platform, and saves the
    preferences under `.local/state/setup/`. It does not install global tools,
    authenticate, clone repositories, or alter remotes.
-5. Create an identity profile for each account with
+5. Link the unified CLI globally (recommended):
+   ```sh
+   mkdir -p ~/.local/bin
+   ln -sf "$(pwd)/bin/aee" ~/.local/bin/aee
+   ```
+   Ensure `~/.local/bin` is in your `$PATH`. The CLI is directory-aware: it searches
+   upward for `aee-workspace.yaml` to detect the workspace root, current worktree,
+   and work-item context, and fails fast outside an `aee` workspace.
+   
+   > [!IMPORTANT]
+   > Do **not** use a hardcoded shell alias (such as `alias aee="/path/to/bin/aee"`).
+   > Hardcoded aliases bind execution to a fixed directory and break directory
+   > discovery and context inference.
+
+6. Optionally enable shell completions for your environment:
+   ```sh
+   # Zsh (in ~/.zshrc)
+   eval "$(aee completion zsh)"
+
+   # Bash (in ~/.bashrc)
+   eval "$(aee completion bash)"
+   ```
+7. Create an identity profile for each account with
    `platform/identity/identity.sh init`, choosing `isolated` or `host` mode
    (see `identity-model.md`), then authenticate it through the relevant CLI as a
    separate, explicit action. Verify with `platform/identity/identity.sh check`.
-6. Register each project and workspace in `config/projects.json`, including the
+8. Register each project and workspace in `config/projects.json`, including the
    identity it uses (`repository.identity`, and `issues.identity` when the issue
    source uses a different account).
-7. Explicitly clone registered projects with
+9. Explicitly clone registered projects with
    `platform/repositories/clone.sh`, or allow the first scaffolding command to
    ensure its selected project.
-8. Create a work item with
-   `platform/workspace-scaffolder/scaffold.sh <workspace> <issue-ref>`.
-9. Resume later through `ticket-coordinator`, using `meta.json` and
-   `session-state.md` rather than prior conversation context.
+10. Create a work item with
+    `platform/workspace-scaffolder/scaffold.sh <workspace> <issue-ref>`.
+11. Resume later through `ticket-coordinator`, using `meta.json` and
+    `session-state.md` rather than prior conversation context.
 
 The host needs Git, GitHub CLI, jq, envsubst, Docker, the Dev Container CLI,
 ShellCheck, ripgrep, Hugo, and SDKMAN. Credentials stay in host-local identity

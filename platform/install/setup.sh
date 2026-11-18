@@ -68,7 +68,7 @@ print_plan() {
   printf '  interface:      %s\n' "$interface"
   printf '  provider:       %s\n' "$resolved_provider"
   printf '\nDetected commands:\n'
-  for command_name in git jq rg gh glab docker devcontainer shellcheck; do
+  for command_name in git jq rg gh glab docker devcontainer shellcheck aee; do
     printf '  %-12s %s\n' "$command_name" "$(command_state "$command_name")"
   done
   printf '\nProfile behavior:\n'
@@ -127,3 +127,7 @@ mv "$temporary" "$PREFERENCES_FILE"
 
 printf '\nSaved local preferences to %s\n' "$PREFERENCES_FILE"
 printf 'Authentication and repository onboarding remain separate explicit steps.\n'
+if ! command -v aee >/dev/null 2>&1; then
+  printf '\nTip: Link bin/aee to ~/.local/bin/aee for directory-aware CLI access from any worktree:\n'
+  printf '     mkdir -p ~/.local/bin && ln -sf "%s/bin/aee" ~/.local/bin/aee\n' "$ROOT"
+fi

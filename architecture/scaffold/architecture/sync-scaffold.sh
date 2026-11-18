@@ -13,7 +13,7 @@ temporary="$(mktemp -d)"
 trap 'rm -rf "$temporary"' EXIT
 mkdir -p "$temporary/tree/config"
 
-for path in .agents .claude .codex .editorconfig .github .gitignore AGENTS.md CLAUDE.md README.md architecture backlog bin documentation platform; do
+for path in .agents .claude .codex .editorconfig .github .gitignore aee-workspace.yaml AGENTS.md CLAUDE.md README.md architecture backlog bin documentation platform; do
   [[ -e "$ROOT/$path" ]] || continue
   # technical-authorial-voice is the operator's proprietary skill and must never ship in the portable scaffold.
   tar -C "$ROOT" --exclude='architecture/scaffold' --exclude='technical-authorial-voice' -cf - "$path" |

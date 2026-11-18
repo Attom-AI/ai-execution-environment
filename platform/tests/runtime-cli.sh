@@ -13,11 +13,14 @@ fail() {
 
 cp -R "$SOURCE_ROOT/platform" "$TEST_ROOT/platform"
 cp -R "$SOURCE_ROOT/bin" "$TEST_ROOT/bin"
+cp "$SOURCE_ROOT/aee-workspace.yaml" "$TEST_ROOT/aee-workspace.yaml"
 mkdir -p \
   "$TEST_ROOT/config" \
   "$TEST_ROOT/workspaces/test-ws/TASK-100"
+cp "$SOURCE_ROOT/config/projects.json" "$TEST_ROOT/config/projects.json"
 
 AEE="$TEST_ROOT/bin/aee"
+export AEE_ROOT="$TEST_ROOT"
 CLI="$TEST_ROOT/platform/cli.sh"
 RUNTIME_CLI="$TEST_ROOT/platform/runtime/runtime.sh"
 RUNTIME_SCRIPTS_CLI="$TEST_ROOT/platform/runtime/scripts/runtime.sh"
@@ -119,13 +122,35 @@ grep -Fq 'aee context hydrate' <<<"$context_help" || fail "missing aee context h
 zsh_comp="$("$AEE" completion zsh)"
 grep -Fq '_aee()' <<<"$zsh_comp" || fail "missing _aee in zsh completion"
 grep -Fq 'compdef _aee aee' <<<"$zsh_comp" || fail "missing compdef in zsh completion"
+grep -Fq 'fleet:' <<<"$zsh_comp" || fail "missing fleet in zsh completion"
+grep -Fq 'job:' <<<"$zsh_comp" || fail "missing job in zsh completion"
+grep -Fq 'morning:' <<<"$zsh_comp" || fail "missing morning in zsh completion"
 
 bash_comp="$("$AEE" completion bash)"
 grep -Fq '_aee_completions()' <<<"$bash_comp" || fail "missing _aee_completions in bash completion"
 grep -Fq 'declare -f _init_completion' <<<"$bash_comp" || fail "missing declare -f check in bash completion"
+grep -Fq 'fleet job morning' <<<"$bash_comp" || fail "missing fleet job morning in bash completion"
 
 # 7. Test identity subcommand dispatching
 identity_list_out="$("$AEE" identity list)"
 grep -Fq 'no identity profiles configured' <<<"$identity_list_out" || fail "unexpected identity list output: $identity_list_out"
+
+# 8. Test fleet, prompt composer, and morning briefing dispatching
+exec_help="$("$AEE" exec --help 2>&1 || true)"
+grep -Fq -- '--tier' <<<"$exec_help" || fail "missing --tier in aee exec help"
+grep -Fq -- '--model' <<<"$exec_help" || fail "missing --model in aee exec help"
+
+fleet_status="$("$AEE" fleet status 2>&1 || true)"
+grep -Fq 'AEE Fleet & Capacity Status' <<<"$fleet_status" || fail "unexpected fleet status output: $fleet_status"
+
+morning_out="$("$AEE" morning 2>&1 || true)"
+grep -Fq 'AEE Executive Morning Briefing' <<<"$morning_out" || fail "unexpected morning briefing output: $morning_out"
+
+job_dry_run="$("$AEE" job submit --type study-synthesis --input documentation/learning-notes/staff_engineer_transition_system_design_first_principles.md --dry-run 2>&1 || true)"
+grep -Fq 'Dry-run: Job' <<<"$job_dry_run" || fail "unexpected job dry run output: $job_dry_run"
+
+# 9. Test fail-fast root discovery outside workspace
+outside_out="$(unset AEE_ROOT; cd /tmp && "$AEE" 2>&1 || true)"
+grep -Fq 'fatal: not an ai-execution-environment workspace' <<<"$outside_out" || fail "missing fail-fast error when outside workspace"
 
 printf 'runtime cli tests passed\n'

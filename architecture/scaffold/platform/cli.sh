@@ -49,6 +49,18 @@ Commands:
     snapshot    Manage context snapshots (create, list, restore, switch)
 
   exec          Execute a single-turn prompt against a work item or context file
+  fleet         Manage multi-agent fleet dispatch, queues, and status
+    dispatch    Dispatch a goal to a slot or queue if pool is saturated
+    status      Show active slots, background fleet workers, and queued tasks
+    queue       Inspect or manipulate the fleet task queue (list, push, pop, cancel)
+
+  job           Manage background Long-Running Operations (LROs) and scheduled tasks
+    submit      Submit an asynchronous LRO (study-synthesis, implementation, maintenance)
+    run         Process queued LROs sequentially
+    list        List all tracked jobs and execution statuses
+    briefing    View or save executive morning briefing
+
+  morning       Display the executive morning briefing digest (shortcut for 'job briefing')
   ingest        Resolve an issue URL/ref, scaffold, and execute headless refinement
   setup         Run environment setup and configuration (plan, apply)
   doctor        Run diagnostic health checks on host tools and configuration
@@ -136,6 +148,9 @@ _aee() {
     'identity:Manage isolated identity profiles'
     'context:Manage session context, memory partitions, and snapshots'
     'exec:Execute a single-turn prompt against a work item or context file'
+    'fleet:Manage multi-agent fleet dispatch, queues, and status'
+    'job:Manage background Long-Running Operations (LROs) and scheduled tasks'
+    'morning:Display the executive morning briefing digest'
     'ingest:Resolve an issue URL/ref, scaffold, and execute headless refinement'
     'setup:Run environment setup and configuration'
     'doctor:Run diagnostic health checks on host tools'
@@ -235,6 +250,25 @@ _aee() {
           )
           _describe -t context_subcmds 'context subcommand' context_subcmds
           ;;
+        fleet)
+          local -a fleet_subcmds
+          fleet_subcmds=(
+            'dispatch:Dispatch a task to a slot or fleet queue'
+            'status:Show active slots, workers, and queued tasks'
+            'queue:Inspect or manage the fleet queue'
+          )
+          _describe -t fleet_subcmds 'fleet subcommand' fleet_subcmds
+          ;;
+        job|jobs)
+          local -a job_subcmds
+          job_subcmds=(
+            'submit:Submit an asynchronous LRO or scheduled job'
+            'run:Process queued LROs sequentially'
+            'list:List all tracked jobs'
+            'briefing:View or save executive morning briefing'
+          )
+          _describe -t job_subcmds 'job subcommand' job_subcmds
+          ;;
         setup)
           local -a setup_subcmds
           setup_subcmds=(
@@ -276,7 +310,7 @@ _aee_completions() {
     cword="$COMP_CWORD"
   fi
 
-  local commands="runtime slots worktrees repos work-items identity context exec ingest setup doctor validate version completion help"
+  local commands="runtime slots worktrees repos work-items identity context exec fleet job morning ingest setup doctor validate version completion help"
 
   if [[ "$cword" -eq 1 ]]; then
     # shellcheck disable=SC2207
@@ -312,6 +346,14 @@ _aee_completions() {
     context)
       # shellcheck disable=SC2207
       COMPREPLY=( $(compgen -W "init hydrate append compact snapshot" -- "$cur") )
+      ;;
+    fleet)
+      # shellcheck disable=SC2207
+      COMPREPLY=( $(compgen -W "dispatch status queue" -- "$cur") )
+      ;;
+    job|jobs)
+      # shellcheck disable=SC2207
+      COMPREPLY=( $(compgen -W "submit run list briefing" -- "$cur") )
       ;;
     setup)
       # shellcheck disable=SC2207
@@ -349,6 +391,9 @@ case "$action" in
     [[ "$#" -eq 0 ]] || shift
     case "$subcmd" in
       status|list)
+        if [[ "$#" -eq 0 && -n "${AEE_PROJECT:-}" ]]; then
+          exec "$ROOT/platform/repositories/status.sh" "$AEE_PROJECT"
+        fi
         exec "$ROOT/platform/repositories/status.sh" "$@"
         ;;
       ensure)
@@ -394,8 +439,12 @@ case "$action" in
         exec "$ROOT/platform/workspace-scaffolder/resolve.sh" "$@"
         ;;
       status)
-        [[ "$#" -eq 2 ]] || { cmd_work_items_usage; exit 2; }
-        show_work_item_status "$1" "$2"
+        if [[ "$#" -eq 0 && -n "${AEE_WORKSPACE:-}" && -n "${AEE_WORK_ITEM:-}" ]]; then
+          show_work_item_status "$AEE_WORKSPACE" "$AEE_WORK_ITEM"
+        else
+          [[ "$#" -eq 2 ]] || { cmd_work_items_usage; exit 2; }
+          show_work_item_status "$1" "$2"
+        fi
         ;;
       help|--help|-h)
         cmd_work_items_usage
@@ -460,6 +509,69 @@ case "$action" in
     ;;
   exec)
     exec "$ROOT/platform/agents/exec.sh" "$@"
+    ;;
+  fleet)
+    subcmd="${1:-status}"
+    [[ "$#" -eq 0 ]] || shift
+    case "$subcmd" in
+      dispatch)
+        exec "$ROOT/platform/fleet/dispatch.sh" "$@"
+        ;;
+      queue)
+        exec "$ROOT/platform/fleet/queue.sh" "$@"
+        ;;
+      status|list)
+        exec "$ROOT/platform/fleet/status.sh" "$@"
+        ;;
+      help|--help|-h)
+        cat <<'EOF'
+usage:
+  aee fleet dispatch <workspace-id> <work-item-id> <goal> [options]
+  aee fleet status
+  aee fleet queue [list|push|pop|cancel|clear]
+EOF
+        exit 0
+        ;;
+      *)
+        printf 'error: unknown fleet subcommand: %s\n' "$subcmd" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  job|jobs)
+    subcmd="${1:-list}"
+    [[ "$#" -eq 0 ]] || shift
+    case "$subcmd" in
+      submit)
+        exec "$ROOT/platform/jobs/submit.sh" "$@"
+        ;;
+      run)
+        exec "$ROOT/platform/jobs/runner.sh" "$@"
+        ;;
+      briefing)
+        exec "$ROOT/platform/jobs/briefing.sh" "$@"
+        ;;
+      list|status)
+        exec "$ROOT/platform/jobs/briefing.sh" "$@"
+        ;;
+      help|--help|-h)
+        cat <<'EOF'
+usage:
+  aee job submit [options]
+  aee job run [--all] [job-id]
+  aee job list
+  aee job briefing [--save]
+EOF
+        exit 0
+        ;;
+      *)
+        printf 'error: unknown job subcommand: %s\n' "$subcmd" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  morning)
+    exec "$ROOT/platform/jobs/briefing.sh" "$@"
     ;;
   ingest)
     exec "$ROOT/platform/workspace-scaffolder/ingest.sh" "$@"

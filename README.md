@@ -83,6 +83,29 @@ The unified CLI provides command-line control over all platform subsystems:
 aee <command> [subcommand] [arguments...]
 ```
 
+### Global Installation & Directory Awareness
+
+`aee` is **directory-aware**: it searches upward from your current working directory for `aee-workspace.yaml` to detect the workspace root, current worktree, and active work item. It fails fast with an error if invoked outside an `aee` workspace.
+
+To use `aee` globally from anywhere across your workspaces and worktrees, symlink it to a directory in your `$PATH` (e.g., `~/.local/bin`):
+
+```bash
+mkdir -p ~/.local/bin
+ln -sf "$(pwd)/bin/aee" ~/.local/bin/aee
+```
+
+*(Note: Do not create a hardcoded shell alias like `alias aee="/path/to/bin/aee"`, as aliases bypass directory traversal and context inference).*
+
+#### Shell Completions
+
+```bash
+# Zsh (add to ~/.zshrc)
+eval "$(aee completion zsh)"
+
+# Bash (add to ~/.bashrc)
+eval "$(aee completion bash)"
+```
+
 | Command | Subcommands | Purpose |
 |---|---|---|
 | **`runtime`** | `start`, `stop`, `close`, `list`, `slots`, `worktrees` | Manage container runtimes, inspect pool allocations, and operate worktrees. |
