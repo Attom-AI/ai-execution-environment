@@ -23,6 +23,10 @@ done
 if [[ -d "$temporary/tree/documentation/learning-notes" ]]; then
   find "$temporary/tree/documentation/learning-notes" -mindepth 1 ! -name README.md -exec rm -rf {} +
 fi
+# Per-project docs hold real client business logic/ontology/decisions; the scaffold keeps only the directory's README.
+if [[ -d "$temporary/tree/documentation/projects" ]]; then
+  find "$temporary/tree/documentation/projects" -mindepth 1 -maxdepth 1 ! -name README.md -exec rm -rf {} +
+fi
 cp "$ROOT/architecture/scaffold-source/projects.json" "$temporary/tree/config/projects.json"
 
 mkdir -p "$SCAFFOLD"

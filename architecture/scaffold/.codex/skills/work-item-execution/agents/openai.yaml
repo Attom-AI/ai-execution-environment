@@ -1,4 +1,0 @@
-interface:
-  display_name: "Work Item Execution"
-  short_description: "Resume and drive a project work item"
-  default_prompt: "Use $work-item-execution to inspect this work item's durable state and recommend its next pipeline stage."

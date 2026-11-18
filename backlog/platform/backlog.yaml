@@ -165,19 +165,3 @@
   related:
     - shareable-sdd-platform
 
-- id: create-system-design-practical-guide-repository
-  status: completed
-  progress:
-    - Created https://github.com/eiakoji-me/system-design-practical-guide under the verified eiakoji-me identity.
-    - Verified GitHub reports private visibility and main as the default branch.
-    - Verified README.md contains the requested book title and description.
-  summary: Create and verify the private eiakoji-me/system-design-practical-guide repository with an initialized book README.
-  context: >-
-    The repository will hold A Practical Guide to System Design: Problem Classification,
-    Architectural Archetypes, and System Composition. It must remain private.
-  steps:
-    - Create the repository under the eiakoji-me owner with private visibility.
-    - Initialize README.md with the book title and a concise description.
-    - Verify the repository exists, is private, and exposes the expected README.
-
-
