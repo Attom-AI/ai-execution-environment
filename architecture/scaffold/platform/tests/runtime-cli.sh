@@ -146,7 +146,9 @@ grep -Fq 'AEE Fleet & Capacity Status' <<<"$fleet_status" || fail "unexpected fl
 morning_out="$("$AEE" morning 2>&1 || true)"
 grep -Fq 'AEE Executive Morning Briefing' <<<"$morning_out" || fail "unexpected morning briefing output: $morning_out"
 
-job_dry_run="$("$AEE" job submit --type study-synthesis --input documentation/learning-notes/staff_engineer_transition_system_design_first_principles.md --dry-run 2>&1 || true)"
+mkdir -p "$TEST_ROOT/documentation/learning-notes"
+printf '# Fixture note\n' >"$TEST_ROOT/documentation/learning-notes/fixture.md"
+job_dry_run="$("$AEE" job submit --type study-synthesis --input "$TEST_ROOT/documentation/learning-notes/fixture.md" --dry-run 2>&1 || true)"
 grep -Fq 'Dry-run: Job' <<<"$job_dry_run" || fail "unexpected job dry run output: $job_dry_run"
 
 # 9. Test fail-fast root discovery outside workspace
