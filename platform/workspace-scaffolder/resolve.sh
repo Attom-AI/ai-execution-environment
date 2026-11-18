@@ -72,13 +72,61 @@ repo_hint=""
 number=""
 project_hint="$project_arg"
 
+# Check for existing worktree or workspace path
+if [[ "$clean_ref" == worktrees/* || "$clean_ref" == workspaces/* || -d "$ROOT/$clean_ref" ]]; then
+  meta_file=""
+  if [[ "$clean_ref" == workspaces/* && -f "$ROOT/$clean_ref/meta.json" ]]; then
+    meta_file="$ROOT/$clean_ref/meta.json"
+  elif [[ "$clean_ref" == worktrees/* ]]; then
+    wt_target="${clean_ref#worktrees/}"
+    while IFS= read -r candidate; do
+      rec_wt="$(jq -r '.runtime.worktree // empty' "$candidate")"
+      rec_ws="$(jq -r '.workspace' "$candidate")"
+      rec_wi="$(jq -r '.workItem' "$candidate")"
+      rec_derived="worktrees/$(printf '%s-%s' "$rec_ws" "$rec_wi" | tr '[:upper:]' '[:lower:]')"
+      if [[ "$rec_wt" == "$clean_ref" || "$rec_wt" == "worktrees/$wt_target" || "$rec_derived" == "$clean_ref" ]]; then
+        meta_file="$candidate"
+        break
+      fi
+    done < <(find "$ROOT/workspaces" -mindepth 3 -maxdepth 3 -name meta.json -type f -print 2>/dev/null | sort)
+  fi
+
+  if [[ -n "$meta_file" && -f "$meta_file" ]]; then
+    p_id="$(jq -r '.project' "$meta_file")"
+    ws="$(jq -r '.workspace' "$meta_file")"
+    prov="$(jq -r '.source.provider' "$meta_file")"
+    key_ref="$(jq -r '.source.key' "$meta_file")"
+
+    if [[ "$output_json" -eq 1 ]]; then
+      jq -n \
+        --arg projectId "$p_id" \
+        --arg workspace "$ws" \
+        --arg provider "$prov" \
+        --arg issueRef "$key_ref" \
+        '{projectId: $projectId, workspace: $workspace, provider: $provider, issueRef: $issueRef}'
+    else
+      printf '%s\t%s\t%s\t%s\n' "$p_id" "$ws" "$prov" "$key_ref"
+    fi
+    exit 0
+  fi
+fi
+
 # 1. Full GitHub URL or github.com path: github.com/owner/repo/issues/123
 if [[ "$clean_ref" =~ ^github\.com/([^/]+)/([^/]+)/issues/([0-9]+)$ ]]; then
   owner_hint="${BASH_REMATCH[1]}"
   repo_hint="${BASH_REMATCH[2]}"
   number="${BASH_REMATCH[3]}"
 
-# 2. Custom domain path: e.g. wiki.eiakoji.me/issues/123
+# 2. Jira browse URL: e.g. myorg.atlassian.net/browse/PROJ-123 or jira.company.com/browse/PROJ-123
+elif [[ "$clean_ref" =~ ^([^/]+)(/[^/]+)*/browse/([A-Za-z0-9_]+)-([0-9]+)$ ]]; then
+  owner_hint="${BASH_REMATCH[1]}"
+  repo_hint="${BASH_REMATCH[3]}"
+  number="${BASH_REMATCH[4]}"
+  if [[ -z "$project_hint" ]]; then
+    project_hint="$repo_hint"
+  fi
+
+# 3. Custom domain path: e.g. wiki.eiakoji.me/issues/123
 elif [[ "$clean_ref" =~ ^([^/]+)/issues/([0-9]+)$ ]]; then
   domain="${BASH_REMATCH[1]}"
   number="${BASH_REMATCH[2]}"
@@ -86,12 +134,20 @@ elif [[ "$clean_ref" =~ ^([^/]+)/issues/([0-9]+)$ ]]; then
     project_hint="$(printf '%s' "$domain" | tr '.' '-')"
   fi
 
-# 3. Shorthand: e.g. wiki-eiakoji-me#123 or wiki-eiakoji-me:123
+# 4. Jira Issue Key: e.g. PROJ-123 or KAN-42
+elif [[ "$clean_ref" =~ ^([A-Z][A-Z0-9_]*)-([0-9]+)$ ]]; then
+  repo_hint="${BASH_REMATCH[1]}"
+  number="${BASH_REMATCH[2]}"
+  if [[ -z "$project_hint" ]]; then
+    project_hint="$repo_hint"
+  fi
+
+# 5. Shorthand: e.g. wiki-eiakoji-me#123 or wiki-eiakoji-me:123
 elif [[ "$clean_ref" =~ ^([^#/:]+)[#:]([0-9]+)$ ]]; then
   project_hint="${BASH_REMATCH[1]}"
   number="${BASH_REMATCH[2]}"
 
-# 4. Pure issue number: e.g. 123
+# 6. Pure issue number: e.g. 123
 elif [[ "$clean_ref" =~ ^[0-9]+$ ]]; then
   number="$clean_ref"
   [[ -n "$project_hint" ]] || die "pass --project <id> when providing a bare issue number"
@@ -109,7 +165,8 @@ if [[ -n "$owner_hint" && -n "$repo_hint" ]]; then
     --arg r "$repo_hint" '
     .projects[] | select(
       ((.repository.owner | ascii_downcase) == ($o | ascii_downcase) and (.repository.name | ascii_downcase) == ($r | ascii_downcase)) or
-      ((.issues.owner | ascii_downcase) == ($o | ascii_downcase) and (.issues.repository | ascii_downcase) == ($r | ascii_downcase))
+      ((.issues.owner | ascii_downcase) == ($o | ascii_downcase) and (.issues.repository | ascii_downcase) == ($r | ascii_downcase)) or
+      ((.issues.provider == "jira") and ((.issues.repository | ascii_downcase) == ($r | ascii_downcase)))
     )' "$PROJECTS_MANIFEST" 2>/dev/null || true)"
 fi
 
@@ -121,6 +178,7 @@ if [[ -z "$matched_project" && -n "$project_hint" ]]; then
       .id == $h or
       .workspace == $h or
       .repository.name == $h or
+      ((.issues.repository | ascii_downcase) == ($h | ascii_downcase)) or
       (.repository.url | endswith("/" + $h)) or
       (.repository.url | endswith("/" + $h + ".git")) or
       (.id | contains($h)) or

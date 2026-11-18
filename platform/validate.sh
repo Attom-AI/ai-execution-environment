@@ -54,6 +54,7 @@ required_paths=(
   platform/workspace-scaffolder/ingest.sh
   platform/workspace-scaffolder/resolve.sh
   platform/workspace-scaffolder/sources/github.sh
+  platform/workspace-scaffolder/sources/jira.sh
 )
 for required_path in "${required_paths[@]}"; do
   [[ -e "$ROOT/$required_path" ]] || die "required portable component is missing: $required_path"

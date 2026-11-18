@@ -94,6 +94,7 @@ case "$action" in
       printf '\nNo authentication was performed. Authenticate as %s explicitly, for example:\n' "$account"
       printf '  GitHub:    GH_CONFIG_DIR=%q gh auth login --hostname github.com --git-protocol %s --insecure-storage\n' "$profile_dir/gh" "$transport"
       printf '  GitLab:    GLAB_CONFIG_DIR=%q glab auth login\n' "$profile_dir/glab"
+      printf '  Jira:      place config.yml or credentials in %q\n' "$profile_dir/jira"
       printf '  Bitbucket: add an https://<user>:<token>@bitbucket.org line to %q\n' "$profile_dir/git/credentials"
       printf '  SSH:       place a key as %q and provider host keys in %q\n' "$profile_dir/ssh/id_ed25519" "$profile_dir/ssh/known_hosts"
       printf '\nTokens are stored in files under the profile so containers can use them.\n'

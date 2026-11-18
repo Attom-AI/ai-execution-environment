@@ -3,8 +3,12 @@
   summary: Select the engine that executes the tool-neutral workflow stages.
 
 - id: jira-source-adapter
-  status: open
+  status: completed
   summary: Implement normalized Jira intake without changing downstream stages.
+  progress:
+    - Added normalized Jira source adapter in platform/workspace-scaffolder/sources/jira.sh.
+    - Added Jira browse URL and issue key (e.g. PROJ-123) recognition in resolve.sh.
+    - Added Jira credentials and check support to platform/identity/ and doctor diagnostics.
 
 - id: pull-request-provider-contract
   status: open

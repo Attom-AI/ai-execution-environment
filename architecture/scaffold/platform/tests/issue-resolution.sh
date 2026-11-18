@@ -60,7 +60,41 @@ cli_res="$("$AEE" work-items resolve wiki.eiakoji.me/issues/42 --json)"
 [[ "$(jq -r '.projectId' <<<"$cli_res")" == "wiki-eiakoji-me" ]] || fail "unexpected projectId from cli resolve: $cli_res"
 [[ "$(jq -r '.issueRef' <<<"$cli_res")" == "42" ]] || fail "unexpected issueRef from cli resolve: $cli_res"
 
-# 9. Test unresolvable reference exits with 1
+# 9. Test Jira URL and issue key resolution with isolated manifest fixture
+tmp_manifest="$(mktemp)"
+trap 'rm -f "$tmp_manifest"' EXIT
+jq -n '{
+  version: 1,
+  projects: [{
+    id: "jira-project",
+    workspace: "jira-ws",
+    repository: {
+      provider: "github",
+      owner: "example",
+      name: "jira-project",
+      url: "https://github.com/example/jira-project.git",
+      path: "repos/jira-project",
+      identity: "jira-id"
+    },
+    issues: {
+      provider: "jira",
+      owner: "example-corp.atlassian.net",
+      repository: "PROJ"
+    }
+  }]
+}' >"$tmp_manifest"
+
+res_jira_url="$(PROJECTS_MANIFEST="$tmp_manifest" "$RESOLVE" https://example-corp.atlassian.net/browse/PROJ-101 --json)"
+[[ "$(jq -r '.projectId' <<<"$res_jira_url")" == "jira-project" ]] || fail "unexpected projectId in res_jira_url: $res_jira_url"
+[[ "$(jq -r '.provider' <<<"$res_jira_url")" == "jira" ]] || fail "unexpected provider in res_jira_url: $res_jira_url"
+[[ "$(jq -r '.issueRef' <<<"$res_jira_url")" == "101" ]] || fail "unexpected issueRef in res_jira_url: $res_jira_url"
+
+res_jira_key="$(PROJECTS_MANIFEST="$tmp_manifest" "$RESOLVE" PROJ-101 --json)"
+[[ "$(jq -r '.projectId' <<<"$res_jira_key")" == "jira-project" ]] || fail "unexpected projectId in res_jira_key: $res_jira_key"
+[[ "$(jq -r '.provider' <<<"$res_jira_key")" == "jira" ]] || fail "unexpected provider in res_jira_key: $res_jira_key"
+[[ "$(jq -r '.issueRef' <<<"$res_jira_key")" == "101" ]] || fail "unexpected issueRef in res_jira_key: $res_jira_key"
+
+# 10. Test unresolvable reference exits with 1
 set +e
 "$RESOLVE" unknown-project.xyz/issues/999 >/dev/null 2>&1
 bad_code=$?

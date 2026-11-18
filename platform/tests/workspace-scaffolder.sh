@@ -82,4 +82,51 @@ jq -e '.lifecycleStage == "designed"' "$item/meta.json" >/dev/null
 [[ -d "$item/artifacts" ]]
 [[ ! -e "$TEST_ROOT/worktrees/fixture-feat-7" ]]
 
+# Test Jira intake scaffolding
+jq --arg url "$TEST_ROOT/origin.git" '.projects += [{
+  id: "jira-fixture",
+  workspace: "jira-fixture",
+  repository: {
+    provider: "github",
+    owner: "example",
+    name: "fixture",
+    url: $url,
+    path: "repos/jira-fixture",
+    identity: "fixture"
+  },
+  issues: {
+    provider: "jira",
+    owner: "example-corp.atlassian.net",
+    repository: "JIRA"
+  }
+}]' "$TEST_ROOT/config/projects.json" >"$TEST_ROOT/config/projects.json.tmp"
+mv "$TEST_ROOT/config/projects.json.tmp" "$TEST_ROOT/config/projects.json"
+
+export AEE_TEST_JIRA_PAYLOAD='{
+  "key": "JIRA-42",
+  "fields": {
+    "summary": "Implement single sign-on",
+    "description": "Users must be able to log in with corporate SSO",
+    "issuetype": {"name": "Story"},
+    "labels": ["sso", "security"]
+  }
+}'
+
+"$TEST_ROOT/platform/workspace-scaffolder/scaffold.sh" jira-fixture JIRA-42 --no-start
+jira_item="$TEST_ROOT/workspaces/jira-fixture/FEAT-42"
+jq -e '
+  .source == "jira" and
+  .key == "JIRA-42" and
+  .number == 42 and
+  .type == "FEAT" and
+  .workItem == "FEAT-42"
+' "$jira_item/ticket.json" >/dev/null
+
+jq -e '
+  .lifecycleStage == "scaffolded" and
+  .source.provider == "jira" and
+  .source.key == "JIRA-42" and
+  .design.branch == "feat/42-implement-single-sign-on"
+' "$jira_item/meta.json" >/dev/null
+
 printf 'workspace scaffolder test passed\n'

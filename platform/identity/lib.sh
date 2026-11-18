@@ -113,6 +113,7 @@ identity_env_lines() {
 
   printf 'GH_CONFIG_DIR=%s\n' "$base/gh"
   printf 'GLAB_CONFIG_DIR=%s\n' "$base/glab"
+  printf 'JIRA_CONFIG_DIR=%s\n' "$base/jira"
   printf 'IDENTITY_SVN_CONFIG_DIR=%s\n' "$base/svn"
   printf 'GIT_CONFIG_NOSYSTEM=1\n'
   if [[ -f "$host_dir/git/config" ]]; then
@@ -246,6 +247,12 @@ identity_check() {
     login="$(identity_exec "$id" glab api user 2>/dev/null | jq -r '.username // empty' 2>/dev/null || true)"
     if [[ -n "$login" || "$mode" == isolated ]]; then
       report glab "$login"
+    fi
+  fi
+  if { [[ "$mode" == isolated && -d "$host_dir/jira" ]] || [[ "$mode" == host ]]; } && command -v jira >/dev/null 2>&1; then
+    login="$(identity_exec "$id" jira me 2>/dev/null | jq -r '.name // .displayName // .email // empty' 2>/dev/null || true)"
+    if [[ -n "$login" || "$mode" == isolated ]]; then
+      report jira "$login"
     fi
   fi
   local mismatch project url_transport

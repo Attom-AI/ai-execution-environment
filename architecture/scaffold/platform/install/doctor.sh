@@ -57,6 +57,7 @@ if command -v jq >/dev/null 2>&1; then
         credentials=''
         [[ ! -s "$profile_dir/gh/hosts.yml" ]] || credentials+='gh '
         [[ ! -d "$profile_dir/glab" ]] || credentials+='glab '
+        [[ ! -d "$profile_dir/jira" ]] || credentials+='jira '
         [[ ! -s "$profile_dir/git/credentials" ]] || credentials+='git-credentials '
         if find "$profile_dir/ssh" -maxdepth 1 -type f -name 'id_*' ! -name '*.pub' 2>/dev/null | grep -q .; then
           credentials+='ssh-key '

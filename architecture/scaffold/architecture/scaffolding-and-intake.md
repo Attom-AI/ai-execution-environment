@@ -17,5 +17,7 @@ state files only when absent. Re-running intake therefore refreshes external
 issue data without overwriting pipeline progress. It ensures the canonical
 repository and starts or resumes the runtime unless explicitly told not to.
 
-GitHub is implemented for both axes. Jira remains a visible adapter stub and
-backlog item; adding it must not require downstream pipeline changes.
+GitHub is implemented for both repository and issue axes. Jira is implemented
+as a normalized issue source adapter (`sources/jira.sh`), accepting full issue
+URLs, project keys (e.g. `PROJ-123`), and bare issue numbers while preserving
+clean decoupling from downstream pipeline stages.
